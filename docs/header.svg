@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 420" font-family="-apple-system,Segoe UI,Inter,Helvetica,Arial,sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1020"/><stop offset="1" stop-color="#15213f"/></linearGradient>
+    <radialGradient id="glow" cx="0.78" cy="0.5" r="0.45"><stop offset="0" stop-color="#7aa2ff" stop-opacity="0.35"/><stop offset="1" stop-color="#7aa2ff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#60a5fa"/><stop offset="1" stop-color="#f59e0b"/></linearGradient>
+    <clipPath id="r"><rect width="1600" height="420" rx="24"/></clipPath>
+  </defs>
+  <g clip-path="url(#r)">
+    <rect width="1600" height="420" fill="url(#bg)"/>
+    <rect width="1600" height="420" fill="url(#glow)"/>
+    <!-- contour rings: explored territory -->
+    <g fill="none" stroke="#60a5fa" stroke-opacity="0.18" stroke-width="1.5" transform="translate(1180 210)">
+      <ellipse rx="70" ry="42"/><ellipse rx="140" ry="86"/><ellipse rx="210" ry="128"/><ellipse rx="280" ry="170"/><ellipse rx="350" ry="212"/>
+    </g>
+    <!-- the edge: bright contour where known meets unknown -->
+    <ellipse cx="1180" cy="210" rx="245" ry="149" fill="none" stroke="url(#edge)" stroke-width="3.5" stroke-dasharray="14 8"/>
+    <!-- nodes inside: known -->
+    <g fill="#93c5fd">
+      <circle cx="1120" cy="180" r="5"/><circle cx="1180" cy="230" r="5"/><circle cx="1230" cy="170" r="5"/><circle cx="1150" cy="260" r="4"/><circle cx="1260" cy="240" r="4"/><circle cx="1100" cy="225" r="4"/>
+    </g>
+    <g stroke="#93c5fd" stroke-opacity="0.5" stroke-width="1.2">
+      <line x1="1120" y1="180" x2="1180" y2="230"/><line x1="1180" y1="230" x2="1230" y2="170"/><line x1="1180" y1="230" x2="1150" y2="260"/><line x1="1180" y1="230" x2="1260" y2="240"/><line x1="1120" y1="180" x2="1100" y2="225"/>
+    </g>
+    <!-- nodes just outside: the next questions -->
+    <g fill="#f59e0b">
+      <circle cx="1400" cy="140" r="6"/><circle cx="1360" cy="300" r="6"/><circle cx="960" cy="110" r="6"/>
+    </g>
+    <g stroke="#f59e0b" stroke-opacity="0.7" stroke-width="1.5" stroke-dasharray="4 4">
+      <line x1="1230" y1="170" x2="1400" y2="140"/><line x1="1260" y1="240" x2="1360" y2="300"/><line x1="1120" y1="180" x2="960" y2="110"/>
+    </g>
+    <!-- arrow outward -->
+    <path d="M1300 110 L1360 70" stroke="#f59e0b" stroke-width="3" fill="none"/><path d="M1352 62 L1366 66 L1360 80z" fill="#f59e0b"/>
+    <!-- title -->
+    <text x="80" y="150" font-size="22" font-weight="600" fill="#93c5fd" letter-spacing="4">AGENT SKILL · CLAUDE CODE · CODEX · COPILOT CLI</text>
+    <text x="78" y="235" font-size="76" font-weight="800" fill="#ffffff" letter-spacing="-1">SRS Edge Learning</text>
+    <text x="80" y="290" font-size="28" fill="#cbd5e1">Find the edge of what you know. Then push it.</text>
+    <text x="80" y="340" font-size="19" fill="#94a3b8">Brief → map → timed rounds → your edge → training protocol → spaced repetition. No API key, nothing leaves your machine.</text>
+  </g>
+</svg>

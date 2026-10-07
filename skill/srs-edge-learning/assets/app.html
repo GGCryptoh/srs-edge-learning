@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SRS Edge Learning</title>
+<style>
+:root{--bg:#f6f7f9;--fg:#15171b;--mut:#6b7280;--line:#e3e6ea;--card:#fff;--acc:#2563eb;--acc2:#dbe7ff;--ok:#15803d;--okbg:#dcfce7;--bad:#b91c1c;--badbg:#fee2e2;--warn:#b45309;--r:12px}
+:root:not([data-theme=light]) { color-scheme: light dark }
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1115;--fg:#e8eaee;--mut:#9aa3af;--line:#262a33;--card:#171a21;--acc:#7aa2ff;--acc2:#1d2a4a;--ok:#3ddc84;--okbg:#113322;--bad:#ff6b6b;--badbg:#3a1414;--warn:#f0b35a}}
+:root[data-theme=dark]{--bg:#0f1115;--fg:#e8eaee;--mut:#9aa3af;--line:#262a33;--card:#171a21;--acc:#7aa2ff;--acc2:#1d2a4a;--ok:#3ddc84;--okbg:#113322;--bad:#ff6b6b;--badbg:#3a1414;--warn:#f0b35a}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,Inter,system-ui,sans-serif}
+a{color:var(--acc)}button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:9px;padding:7px 13px}
+button.p{background:var(--acc);color:#fff;border-color:transparent}button.p:disabled{opacity:.5;cursor:default}button.s{background:transparent}
+button.chip{border-radius:999px;padding:4px 11px;font-size:13px}button.chip.on{background:var(--acc2);border-color:var(--acc)}
+input,textarea,select{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:9px;padding:8px 10px;width:100%}
+header{display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:5}
+header h1{font-size:16px;margin:0;cursor:pointer}header .sp{flex:1}.mut{color:var(--mut)}.sm{font-size:13px}
+main{max-width:1040px;margin:0 auto;padding:20px 16px 60px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}.tile{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px}.tile b{font-size:24px;display:block;line-height:1.1}.tile span{color:var(--mut);font-size:12px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:14px 0 18px;overflow-x:auto}.tabs button{border:0;background:none;border-bottom:2px solid transparent;border-radius:0;padding:8px 12px;color:var(--mut)}.tabs button.on{color:var(--fg);border-bottom-color:var(--acc)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.col{display:flex;flex-direction:column;gap:10px}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc);transition:width .3s}
+.pill{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--acc2);color:var(--fg)}.pill.ok{background:var(--okbg);color:var(--ok)}.pill.bad{background:var(--badbg);color:var(--bad)}
+.wait{display:flex;gap:12px;align-items:center;padding:14px;border:1px dashed var(--line);border-radius:var(--r)}.spin{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:s 1s linear infinite}@keyframes s{to{transform:rotate(360deg)}}
+.q{font-size:22px;line-height:1.35;font-weight:600;margin:10px 0 16px}.choices{display:grid;gap:10px}.choices button{text-align:left;padding:14px 16px;font-size:16px;border-radius:var(--r);display:flex;gap:12px}.choices button kbd{font:600 12px system-ui;background:var(--line);padding:2px 7px;border-radius:5px;min-width:22px;text-align:center;align-self:flex-start;margin-top:3px}
+.choices button.right{background:var(--okbg);border-color:var(--ok)}.choices button.wrong{background:var(--badbg);border-color:var(--bad)}.choices button:disabled{cursor:default}
+.timer{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:6px 0 14px}.timer i{display:block;height:100%;background:var(--acc);transition:width .25s linear}.timer.hot i{background:var(--bad)}
+.why{padding:12px 14px;border-radius:var(--r);margin-top:14px}.why.ok{background:var(--okbg)}.why.bad{background:var(--badbg)}
+.lvl{display:flex;gap:3px}.lvl i{width:18px;height:8px;border-radius:2px;background:var(--line)}.lvl i.on{background:var(--acc)}.lvl i.nx{background:var(--acc2);border:1px solid var(--acc)}
+table{border-collapse:collapse;width:100%;font-size:14px}td,th{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--mut);font-weight:600;font-size:12px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}.modal .card{width:min(520px,100%)}
+ul{padding-left:20px;margin:6px 0}li{margin:3px 0}h2{font-size:18px;margin:0 0 6px}h3{font-size:15px;margin:14px 0 6px}
+.news b{display:block}.kbd{font:12px system-ui;color:var(--mut)}
+body.focus #thead,body.focus .tabs,body.focus #picker,body.focus #trainhead{display:none}
+body.focus #quiz{max-width:760px;margin:30px auto 0}body.focus #qc{padding:26px 28px}body.focus .q{font-size:26px;margin:16px 0 22px}body.focus .choices button{padding:16px 18px;font-size:17px}
+@media(max-width:600px){.q{font-size:19px}main{padding:14px 16px 50px}body.focus .q{font-size:21px}}
+</style></head><body>
+<header><h1 onclick="location.hash='#/'">◆ SRS Edge Learning</h1><span id="crumb" class="mut sm"></span><span class="sp"></span><span id="pend" class="sm mut"></span><button class="s" onclick="settings()">⚙</button></header>
+<main id="m"></main>
+<script>
+const $=s=>document.querySelector(s), h=s=>s==null?'':String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const api=(p,b)=>fetch(p,b?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}:{}).then(r=>r.json());
+let IDX=null, T=null, tab='brief', poll=null, session=null;
+const LV={1:'foundations',2:'working knowledge',3:'practitioner',4:'expert',5:'edge of the field'};
+const route=()=>{const p=location.hash.replace(/^#\/?/,'').split('/');return {view:p[0]||'home',slug:p[1],sub:p[2]}};
+window.addEventListener('hashchange',render);
+async function render(){const r=route();clearInterval(poll);session=null;document.body.classList.remove('focus');
+  if(r.view==='topic'){await loadTopic(r.slug);tab=r.sub||tab||'brief';topicView();poll=setInterval(async()=>{if(session)return;const before=JSON.stringify([T.brief&&T.brief.generated,T.categories.length,T.questions.length,T.plan&&T.plan.generated,T.agent&&T.agent.online]);await loadTopic(r.slug);const after=JSON.stringify([T.brief&&T.brief.generated,T.categories.length,T.questions.length,T.plan&&T.plan.generated,T.agent&&T.agent.online]);if(before!==after)topicView();pendLine()},3000)}
+  else{IDX=await api('/api/index');home();poll=setInterval(async()=>{IDX=await api('/api/index');pendLine()},4000)}
+  pendLine()}
+function pendLine(){const p=IDX?IDX.pending:(T?T.requests.filter(r=>r.status==='pending'):[]);const ag=(T&&T.agent)||(IDX&&IDX.agent)||{};const on=ag.online;$('#pend').innerHTML=`<span class="pill ${on?'ok':''}" title="${on?'An agent is listening for requests from this page':'No agent is listening. Open the Copy prompt on any waiting card.'}">${on?'● agent listening':'○ agent offline'}</span>${p.length?` <span class="pill">${p.length} in progress</span>`:''}`}
+async function loadTopic(slug){T=await api('/api/topic/'+slug);IDX=IDX||await api('/api/index');if(T.error){$('#m').innerHTML=`<div class="card">${h(T.error)} — <a href="#/">back</a></div>`;throw T.error}}
+
+// ---------- home
+function home(){$('#crumb').textContent='';const ts=IDX.topics;
+  $('#m').innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:14px"><div><h2>Your topics</h2><div class="mut sm">Pick one to continue, or start something new. Your agent (Claude Code, Codex, Copilot CLI…) writes the content; this page measures you and schedules the reviews.</div></div><button class="p" onclick="newTopic()">+ New topic</button></div>
+  <div class="tiles" style="margin-bottom:16px"><div class="tile"><b>${ts.length}</b><span>topics</span></div><div class="tile"><b>${ts.reduce((a,t)=>a+t.answered,0)}</b><span>questions answered</span></div><div class="tile"><b>${ts.reduce((a,t)=>a+t.due,0)}</b><span>cards due today</span></div><div class="tile"><b>${Math.max(0,...ts.map(t=>t.streak_days))}</b><span>day streak</span></div></div>
+  <div class="grid">${ts.map(t=>`<div class="card col" style="cursor:pointer" onclick="location.hash='#/topic/${t.slug}'"><div class="row" style="justify-content:space-between"><b>${h(t.name)}</b>${t.due?`<span class="pill">${t.due} due</span>`:''}</div><div class="mut sm">${h(t.goal)||'&nbsp;'}</div>
+   <div class="row sm"><span>edge L${t.overall_edge}</span><span class="mut">·</span><span>${t.answered}/${t.questions} answered</span><span class="mut">·</span><span>${t.accuracy==null?'–':Math.round(t.accuracy*100)+'%'}</span></div>
+   <div class="bar"><i style="width:${t.overall_edge/5*100}%"></i></div><div class="mut sm">${t.has_brief?'brief ✓':'no brief yet'} · ${t.categories} categories · ${t.plan?'protocol ✓':'no protocol'}</div></div>`).join('')||`<div class="card mut">No topics yet. Click <b>New topic</b>.</div>`}</div>
+  <p class="mut sm" style="margin-top:22px">Data lives in <code>${h(IDX.home)}</code>. Nothing leaves this machine.</p>`}
+function newTopic(){$('#m').insertAdjacentHTML('beforeend',`<div class="modal" id="mod"><div class="card col"><h2>New topic</h2><label>What do you want to get smart at?<input id="nt" placeholder="e.g. Rust ownership, MiFID II, how LLM inference works" autofocus></label>
+  <label>Why / what for? <span class="mut sm">(shapes the questions)</span><input id="ng" placeholder="e.g. interview next month · explain it to a client · build a product"></label>
+  <label>Where are you today?<select id="nl"><option value="1">Never touched it</option><option value="2" selected>Some exposure</option><option value="3">I use it at work</option><option value="4">I'd call myself strong</option></select></label>
+  <label>Start with<select id="nm"><option value="cliff">Cliff notes brief (read first)</option><option value="bullets">Short bullets brief</option><option value="deeper">Go deeper straight away (categories + quiz)</option></select></label>
+  <div class="row" style="justify-content:flex-end"><button onclick="$('#mod').remove()">Cancel</button><button class="p" onclick="createTopic()">Create</button></div></div></div>`);$('#nt').focus()}
+async function createTopic(){const name=$('#nt').value.trim();if(!name)return;const r=await api('/api/topic',{name,goal:$('#ng').value.trim(),level:$('#nl').value});const m=$('#nm').value;
+  if(m==='deeper'){await api('/api/request',{topic:r.slug,type:'categories'});tab='learn'}else{await api('/api/request',{topic:r.slug,type:'brief',params:{mode:m}});tab='brief'}
+  $('#mod').remove();location.hash='#/topic/'+r.slug}
+
+// ---------- topic
+function topicView(){const s=T.summary;$('#crumb').textContent=T.name;
+  $('#m').innerHTML=`<div class="row" id="thead" style="justify-content:space-between"><div><h2>${h(T.name)}</h2><div class="mut sm">${h(T.goal)||'no goal set'}</div></div><div class="row sm"><span class="pill">edge L${s.overall_edge}</span><span class="pill">${s.due} due</span><span class="pill">${s.streak_days}d streak</span></div></div>
+  <div class="tabs">${['brief','learn','train','progress','plan'].map(t=>`<button class="${tab===t?'on':''}" onclick="tab='${t}';location.hash='#/topic/${T.slug}/${t}'">${{brief:'Brief',learn:'Go deeper',train:`Train${s.due?' ('+s.due+')':''}`,progress:'Progress',plan:'Protocol'}[t]}</button>`).join('')}</div><div id="tab"></div>`;
+  ({brief,learn,train,progress,plan})[tab]()}
+const pendingOf=k=>T.requests.find(r=>r.status==='pending'&&r.type===k);
+const PROMPT='/srs-edge-learning serve my pending requests';
+function copy(txt,btn){const done=()=>{const o=btn.textContent;btn.textContent='Copied ✓';setTimeout(()=>btn.textContent=o,1500)};try{navigator.clipboard.writeText(txt).then(done,()=>{const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();done()})}catch(e){prompt('Copy this:',txt)}}
+const waiting=(k,what)=>{const r=pendingOf(k);const on=T.agent&&T.agent.online;
+  if(on)return `<div class="wait"><div class="spin"></div><div class="col" style="gap:6px"><div><b>Your agent is writing ${what}.</b></div><div class="sm">Nothing to do. Stay on this page or come back in a minute; it updates by itself.</div><div class="sm mut">Usually under a minute for a map or questions, a couple of minutes for a brief with fresh news.${r?` · request ${h(r.id.slice(-4))}`:''}</div></div></div>`;
+  return `<div class="wait" style="align-items:flex-start"><div style="font-size:22px;line-height:1">○</div><div class="col" style="flex:1;gap:8px">
+  <div><b>No agent is listening right now.</b> ${what[0].toUpperCase()+what.slice(1)} is queued and will be written as soon as one connects.</div>
+  <div class="sm">Open your AI agent (Claude Code, Codex, Copilot CLI) in a terminal and paste:</div>
+  <div class="row" style="gap:8px"><code style="font-size:14px;padding:8px 12px;flex:1;min-width:200px">${h(PROMPT)}</code><button class="p" onclick="copy(PROMPT,this)">Copy</button></div>
+  <div class="sm mut">The header turns to <b>● agent listening</b> when it's connected, and this card fills in by itself.</div></div></div>`};
+async function req(type,params,note){await api('/api/request',{topic:T.slug,type,params:params||{},note:note||''});await loadTopic(T.slug);topicView()}
+
+function brief(){const b=T.brief;
+  if(!b){$('#tab').innerHTML=pendingOf('brief')?waiting('brief','the brief'):`<div class="card col"><b>No brief yet.</b><div class="mut">A curated read: what it is, how it applies to business and life, who the movers are, what's recent.</div><div class="row"><button class="p" onclick="req('brief',{mode:'cliff'})">Cliff notes</button><button onclick="req('brief',{mode:'bullets'})">Short bullets</button></div></div>`;return}
+  $('#tab').innerHTML=`<div class="card"><div class="row sm mut" style="justify-content:space-between"><span>${b.mode==='cliff'?'Cliff notes':'Short bullets'} · knowledge as of ${h(b.as_of)}${b.sources_live?' · web-checked':' · model knowledge'}</span><span><button class="chip" onclick="req('brief',{mode:'${b.mode==='cliff'?'bullets':'cliff'}'})">Rewrite as ${b.mode==='cliff'?'bullets':'cliff notes'}</button> <button class="chip" onclick="req('brief',{mode:'${b.mode}',refresh:true})">Refresh news</button></span></div>
+   <p style="font-size:17px">${h(b.summary)}</p>
+   ${(b.sections||[]).map(s=>`<h3>${h(s.title)}</h3>${s.text?`<p>${h(s.text)}</p>`:''}${s.bullets?`<ul>${s.bullets.map(x=>`<li>${h(x)}</li>`).join('')}</ul>`:''}`).join('')}
+   ${b.movers&&b.movers.length?`<h3>Movers</h3><table><tr><th>Who</th><th>Why they matter</th></tr>${b.movers.map(m=>`<tr><td><b>${h(m.name)}</b>${m.role?`<div class="mut sm">${h(m.role)}</div>`:''}</td><td>${h(m.why)}</td></tr>`).join('')}</table>`:''}
+   ${b.news&&b.news.length?`<h3>Recent &amp; relevant</h3><div class="col news">${b.news.map(n=>`<div><b>${h(n.title)} <span class="mut sm">${h(n.date||'')}</span></b><span class="sm">${h(n.why)}</span>${n.url?` <a class="sm" href="${h(n.url)}" target="_blank">↗</a>`:''}</div>`).join('')}</div>`:''}
+   ${b.glossary&&b.glossary.length?`<h3>Words to know</h3><table>${b.glossary.map(g=>`<tr><td><b>${h(g.term)}</b></td><td>${h(g.means)}</td></tr>`).join('')}</table>`:''}
+   ${b.sources&&b.sources.length?`<h3>Sources</h3><ul class="sm">${b.sources.map(s=>`<li>${/^https?:/.test(s)?`<a href="${h(s)}" target="_blank">${h(s)}</a>`:h(s)}</li>`).join('')}</ul>`:''}
+   <div class="row" style="margin-top:18px"><button class="p" onclick="tab='learn';location.hash='#/topic/${T.slug}/learn'">Go deeper → find my edge</button></div></div>`}
+
+// ---------- learn (adaptive quiz)
+function learn(){const s=T.summary;
+  if(!T.categories.length){$('#tab').innerHTML=pendingOf('categories')?waiting('categories','the map of this topic (categories)'):`<div class="card col"><b>First, a map.</b><div class="mut">Your agent splits the topic into 4–12 categories. Then timed questions find the edge of what you know in each one, and get harder as you go.</div><div><button class="p" onclick="req('categories')">Build the map</button></div></div>`;return}
+  const sel=JSON.parse(localStorage.getItem('sel:'+T.slug)||'null')||T.categories.map(c=>c.id);
+  $('#tab').innerHTML=`<div class="card col" id="picker"><div class="row" style="justify-content:space-between"><b>Pick categories</b><span class="sm mut">${IDX.settings.read_seconds}s to read · ${IDX.settings.answer_seconds}s to answer · blocks of ${IDX.settings.block}</span></div>
+   <div class="row" id="cats">${T.categories.map(c=>{const e=s.edge[c.id]||{};return `<button class="chip ${sel.includes(c.id)?'on':''}" data-id="${c.id}" title="${h(c.why)}" onclick="this.classList.toggle('on');saveSel()">${h(c.name)} <span class="mut">L${e.edge||0}→${e.next||'?'}</span></button>`}).join('')}</div>
+   <div class="sm mut">${(n=>n?`Answer <b>${n}</b> more question${n>1?'s':''} across the selected categories to get your first edge reading (3 per level per category).`:'Edge readings are current; the next round moves them.')(T.categories.filter(c=>sel.includes(c.id)).reduce((a,c)=>a+((s.edge[c.id]||{}).need||0),0))}</div>
+   <div class="row"><button class="p" onclick="startQuiz('quiz')">Start a round</button><button onclick="req('questions',{cats:selCats(),levels:nextLevels(selCats()),n:12},'more questions please')">Ask agent for more questions</button>${pendingOf('questions')?'<span class="sm mut">questions requested, agent is writing…</span>':''}</div>
+   <div class="sm mut">Bank: ${T.categories.map(c=>`${h(c.name)} ${Object.entries(s.unanswered[c.id]||{}).map(([l,n])=>`L${l}×${n}`).join(' ')||'—'}`).join(' · ')}</div></div><div id="quiz"></div>`}
+const selCats=()=>[...document.querySelectorAll('#cats .chip.on')].map(b=>b.dataset.id);
+const saveSel=()=>localStorage.setItem('sel:'+T.slug,JSON.stringify(selCats()));
+const nextLevels=cats=>[...new Set(cats.flatMap(c=>{const n=(T.summary.edge[c]||{}).next||2;return [n,Math.min(5,n+1)]}))].sort();
+function pickNext(cats,mode){const seen=new Set(T.attempts.map(a=>a.qid));
+  if(mode==='train'){const due=new Set(T.due);const qs=T.questions.filter(q=>due.has(q.id)&&!session.done.has(q.id));return qs[0]}
+  for(let k=0;k<cats.length;k++){const c=cats[(session.i+k)%cats.length];const want=(T.summary.edge[c]||{}).next||2;
+    const pool=T.questions.filter(q=>q.cat===c&&!seen.has(q.id)&&!session.done.has(q.id));
+    const q=pool.find(q=>q.level===want)||pool.find(q=>Math.abs(q.level-want)===1)||pool[0];if(q){session.i=(session.i+k+1)%cats.length;return q}}
+  return null}
+function ensureBank(cats){const low=cats.filter(c=>{const want=(T.summary.edge[c]||{}).next||2;const u=T.summary.unanswered[c]||{};return ((u[want]||0)+(u[want+1]||0))<4});
+  if(low.length&&!pendingOf('questions')&&IDX.settings.auto_requests)api('/api/request',{topic:T.slug,type:'questions',params:{cats:low,levels:nextLevels(low),n:10},note:'auto: bank running low'})}
+function startQuiz(mode){const cats=mode==='train'?T.categories.map(c=>c.id):selCats();if(!cats.length)return;
+  session={mode,cats,i:0,done:new Set(),n:0,right:0,start:Date.now(),target:mode==='train'?T.due.length:IDX.settings.block*cats.length};
+  document.body.classList.add('focus');if(mode==='quiz')ensureBank(cats);nextQ()}
+let tick=null;
+async function nextQ(){clearInterval(tick);const q=pickNext(session.cats,session.mode);
+  if(!q||session.n>=session.target){return endQuiz(q?'target':'empty')}
+  session.q=q;session.phase='read';const rs=Math.max(IDX.settings.read_seconds,Math.round(q.q.length/30)),as=IDX.settings.answer_seconds;const cat=T.categories.find(c=>c.id===q.cat)||{name:q.cat};
+  const box=$('#quiz')||$('#tab');box.innerHTML=`<div class="card" id="qc"><div class="row sm mut" style="justify-content:space-between"><span><b style="color:var(--fg)">${h(T.name)}</b> · ${h(cat.name)} · L${q.level} ${LV[q.level]} · ${session.n+1}/${session.target}</span><span>${session.right}/${session.n} right · <a href="#" onclick="endQuiz('stop');return false">stop</a></span></div>
+   <div class="timer" id="tm"><i style="width:100%"></i></div><div class="q">${h(q.q)}</div><div id="ch" class="mut sm">Read it. Choices in <b id="cd">${rs}</b>s… <span class="kbd">(space to show now)</span></div></div>`;
+  let left=rs;const t0=Date.now();tick=setInterval(()=>{left=rs-(Date.now()-t0)/1000;$('#cd')&&($('#cd').textContent=Math.ceil(left));$('#tm i').style.width=Math.max(0,left/rs*100)+'%';if(left<=0)showChoices(as)},250)}
+function showChoices(as){clearInterval(tick);if(session.phase!=='read')return;session.phase='answer';const q=session.q;session.t0=Date.now();
+  $('#ch').className='choices';$('#ch').innerHTML=q.choices.map((c,i)=>`<button onclick="answer(${i})"><kbd>${i+1}</kbd><span>${h(c)}</span></button>`).join('');$('#tm').classList.remove('hot');$('#tm i').style.width='100%';
+  tick=setInterval(()=>{const left=as-(Date.now()-session.t0)/1000;$('#tm i').style.width=Math.max(0,left/as*100)+'%';if(left<5)$('#tm').classList.add('hot');if(left<=0)answer(null)},200)}
+async function answer(i){if(session.phase!=='answer')return;clearInterval(tick);session.phase='result';const q=session.q,ms=Date.now()-session.t0;
+  const r=await api('/api/attempt',{topic:T.slug,qid:q.id,picked:i,ms,mode:session.mode});session.n++;session.done.add(q.id);if(r.correct)session.right++;
+  [...document.querySelectorAll('#ch button')].forEach((b,k)=>{b.disabled=true;if(k===r.answer)b.classList.add('right');else if(k===i)b.classList.add('wrong')});
+  $('#qc').insertAdjacentHTML('beforeend',`<div class="why ${r.correct?'ok':'bad'}"><b>${r.correct?'Right':i==null?'Time':'Not quite'}</b> ${r.correct?'':'— '+h(q.choices[r.answer])}<div class="sm">${h(r.why)}</div><div class="sm mut" style="margin-top:6px">next review in ${r.srs.interval}d · <span class="kbd">space / enter for next</span></div></div>`);
+  session.auto=setTimeout(nextQ,r.correct?2200:5000)}
+async function endQuiz(reason){document.body.classList.remove('focus');clearInterval(tick);clearTimeout(session&&session.auto);const s=session;session=null;await loadTopic(T.slug);
+  const box=$('#quiz')||$('#tab');const msg=reason==='empty'?(pendingOf('questions')?'The bank ran dry; your agent is writing more. Come back in a minute.':'The bank ran dry. Ask your agent for more questions.'):'Round done.';
+  if(s.mode==='quiz'&&reason==='empty'&&!pendingOf('questions')&&IDX.settings.auto_requests)await api('/api/request',{topic:T.slug,type:'questions',params:{cats:s.cats,levels:nextLevels(s.cats),n:12},note:'auto: bank empty after round'});
+  topicView();const b=$('#quiz')||$('#tab');if(!b)return;
+  if(s.n===0&&reason!=='empty')return;
+  if(s.n===0){b.insertAdjacentHTML('afterbegin',`<div class="card" style="margin-bottom:12px"><b>No questions in the bank yet.</b> <span class="sm">${pendingOf('questions')?'Your agent is writing them; this page updates by itself and then <b>Start a round</b> will work.':'Press <b>Ask agent for more questions</b>.'}</span></div>`);return}
+  b.insertAdjacentHTML('afterbegin',`<div class="card" style="margin-bottom:12px"><b>${msg}</b> ${s.right}/${s.n} right in ${Math.round((Date.now()-s.start)/1000)}s.${s.mode==='quiz'?(n=>n?` <b>${n}</b> more to the next edge reading — <a href="#/topic/${T.slug}/progress">Progress</a>.`:' Edge updated — see <a href="#/topic/'+T.slug+'/progress">Progress</a>.')(Object.values(T.summary.edge).reduce((a,x)=>a+x.need,0)):''}</div>`)}
+document.addEventListener('keydown',e=>{if(!session||e.target.tagName==='INPUT')return;if(session.phase==='read'&&e.code==='Space'){e.preventDefault();showChoices(IDX.settings.answer_seconds)}
+  else if(session.phase==='answer'&&/^[1-4]$/.test(e.key))answer(+e.key-1);else if(session.phase==='result'&&(e.code==='Space'||e.key==='Enter')){e.preventDefault();clearTimeout(session.auto);nextQ()}});
+
+// ---------- train (SRS)
+function train(){const n=T.due.length;
+  $('#tab').innerHTML=`<div class="card col" id="trainhead"><b>${n?n+' card'+(n>1?'s':'')+' due':'Nothing due'}</b><div class="mut">Spaced repetition: questions you've met come back just before you'd forget them. Right → longer gap. Wrong → tomorrow.</div>
+   ${n?`<div><button class="p" onclick="startQuiz('train')">Review now</button></div>`:`<div class="sm mut">${T.questions.length?'Answer questions in <b>Go deeper</b> to seed the deck.':'No questions yet.'}</div>`}
+   <table><tr><th>Scheduled</th><th>Cards</th></tr>${Object.entries(T.questions.filter(q=>T.srs[q.id]).reduce((a,q)=>{const d=T.srs[q.id].due;a[d]=(a[d]||0)+1;return a},{})).sort().slice(0,10).map(([d,c])=>`<tr><td>${d}</td><td>${c}</td></tr>`).join('')||'<tr><td colspan=2 class="mut">—</td></tr>'}</table></div><div id="quiz"></div>`}
+
+// ---------- progress
+function progress(){const s=T.summary,e=s.edge;const days={};T.attempts.forEach(a=>{const d=a.ts.slice(0,10);days[d]=days[d]||[0,0];days[d][1]++;if(a.correct)days[d][0]++});const dk=Object.keys(days).sort().slice(-21);
+  $('#tab').innerHTML=`<div class="tiles" style="margin-bottom:12px"><div class="tile"><b>L${s.overall_edge}</b><span>overall edge</span></div><div class="tile"><b>${s.answered}</b><span>questions met</span></div><div class="tile"><b>${s.accuracy==null?'–':Math.round(s.accuracy*100)+'%'}</b><span>accuracy</span></div><div class="tile"><b>${s.due}</b><span>due today</span></div><div class="tile"><b>${Object.values(e).reduce((a,x)=>a+x.need,0)}</b><span>more to next reading</span></div></div>
+  <div class="card"><h3 style="margin-top:0">Edge by category</h3><div class="sm mut" style="margin-bottom:8px">A level counts as <b>held</b> once you've answered 3 questions at it with at least 2 right. Your edge is the highest held level. After 3 at a level: 80%+ moves you up, 40% or less moves you down. Keep playing rounds; the next reading needs the questions shown below.</div><table><tr><th>Category</th><th>Edge</th><th>Next</th><th>By level (right/asked)</th><th>Acc</th></tr>${T.categories.map(c=>{const x=e[c.id];return `<tr><td><b>${h(c.name)}</b><div class="mut sm">${h(c.why)}</div></td><td><div class="lvl">${[1,2,3,4,5].map(l=>`<i class="${l<=x.edge?'on':l===x.next?'nx':''}"></i>`).join('')}</div><span class="sm">${x.edge?`L${x.edge} ${LV[x.edge]}`:'not yet measured'}</span></td><td>L${x.next}<div class="sm mut">${x.need?x.need+' more to read':'reading ready'}</div></td><td class="sm">${Object.entries(x.by_level).map(([l,v])=>`L${l} ${v.right}/${v.n}`).join(' · ')||'—'}</td><td>${x.accuracy==null?'–':Math.round(x.accuracy*100)+'%'}</td></tr>`}).join('')}</table>
+   <h3>Last ${dk.length} active day${dk.length===1?'':'s'}</h3><div class="row" style="align-items:flex-end;height:64px;gap:6px;overflow:hidden">${(mx=>dk.map(d=>`<div title="${d}: ${days[d][0]}/${days[d][1]} right" style="width:22px;height:${Math.max(6,Math.round(days[d][1]/mx*56))}px;background:var(--acc2);border-radius:4px;position:relative;overflow:hidden"><i style="position:absolute;bottom:0;left:0;right:0;height:${Math.round(days[d][0]/days[d][1]*100)}%;background:var(--acc);display:block"></i></div>`).join(''))(Math.max(1,...dk.map(d=>days[d][1])))||'<span class="mut sm">no activity yet</span>'}</div><div class="sm mut">${dk.length?`bar = questions that day, filled = right · today ${days[dk[dk.length-1]][0]}/${days[dk[dk.length-1]][1]}`:''}</div>
+   <div class="row" style="margin-top:16px"><button class="p" onclick="req('diagnose',{},'why do I keep missing these?')" ${pendingOf('diagnose')?'disabled':''}>Diagnose my misses → training protocol</button>${pendingOf('diagnose')?'<span class="sm mut">agent is diagnosing…</span>':''}</div></div>`}
+
+// ---------- plan
+function plan(){const p=T.plan;if(!p){$('#tab').innerHTML=pendingOf('diagnose')?waiting('diagnose','your diagnosis and training protocol'):`<div class="card mut">No protocol yet. Answer a few rounds, then press <b>Diagnose my misses</b> on the Progress tab. The agent reads what you got wrong, finds the root cause, and writes a training protocol (the checker and roadmap roles).</div>`;return}
+  const done=JSON.parse(localStorage.getItem('plan:'+T.slug)||'{}');
+  $('#tab').innerHTML=`<div class="card"><div class="mut sm">written ${h(p.generated)}</div><h3 style="margin-top:6px">Diagnosis</h3><p>${h(p.diagnosis)}</p><h3>Root causes</h3><ul>${(p.root_causes||[]).map(x=>`<li>${h(x)}</li>`).join('')}</ul>
+   <h3>Training protocol</h3><div class="col">${p.protocol.map((s,i)=>`<label class="row" style="align-items:flex-start;gap:10px"><input type="checkbox" style="width:auto;margin-top:5px" ${done[i]?'checked':''} onchange="(d=>{d[${i}]=this.checked;localStorage.setItem('plan:'+T.slug,JSON.stringify(d))})(JSON.parse(localStorage.getItem('plan:'+T.slug)||'{}'))"><span><b>${h(s.step)}</b>${s.how?`<div class="sm">${h(s.how)}</div>`:''}${s.when?`<div class="sm mut">${h(s.when)}</div>`:''}</span></label>`).join('')}</div>
+   ${p.next_test?`<h3>Re-test when</h3><p>${h(p.next_test)}</p>`:''}<div class="row" style="margin-top:12px"><button onclick="tab='learn';location.hash='#/topic/${T.slug}/learn'">Re-test now</button><button onclick="req('diagnose',{},'refresh protocol')">Refresh protocol</button></div></div>`}
+
+// ---------- settings
+function settings(){const s=IDX?IDX.settings:{read_seconds:8,answer_seconds:20,block:5};$('#m').insertAdjacentHTML('beforeend',`<div class="modal" id="mod"><div class="card col"><h2>Settings</h2>
+  <label>Seconds to read a question<input id="s1" type="number" min="2" max="60" value="${s.read_seconds}"></label><label>Seconds to answer<input id="s2" type="number" min="5" max="300" value="${s.answer_seconds}"></label><label>Questions per category per round<input id="s3" type="number" min="1" max="20" value="${s.block}"></label><label class="row" style="gap:8px"><input id="s5" type="checkbox" style="width:auto" ${s.auto_requests?'checked':''}> Ask the agent for more questions automatically when the bank runs low</label>
+  <label>Theme<select id="s4" onchange="document.documentElement.dataset.theme=this.value;localStorage.setItem('theme',this.value)"><option value="">System</option><option value="light" ${localStorage.getItem('theme')==='light'?'selected':''}>Light</option><option value="dark" ${localStorage.getItem('theme')==='dark'?'selected':''}>Dark</option></select></label>
+  <div class="row" style="justify-content:space-between"><button class="s" style="color:var(--bad)" onclick="delTopic()" ${T?'':'disabled'}>Delete this topic</button><span class="row"><button onclick="$('#mod').remove()">Cancel</button><button class="p" onclick="saveSettings()">Save</button></span></div></div></div>`)}
+async function saveSettings(){IDX.settings=await api('/api/settings',{read_seconds:$('#s1').value,answer_seconds:$('#s2').value,block:$('#s3').value,auto_requests:$('#s5').checked?1:0});$('#mod').remove();render()}
+async function delTopic(){if(!T)return;const b=$('#mod .s');if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Click again to delete "'+T.name+'"';return}await api('/api/topic/delete',{slug:T.slug});$('#mod').remove();location.hash='#/'}
+try{const th=localStorage.getItem('theme');if(th)document.documentElement.dataset.theme=th}catch(e){}
+render();
+</script></body></html>

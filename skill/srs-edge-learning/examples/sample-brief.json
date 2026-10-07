@@ -1,0 +1,12 @@
+{"mode": "bullets", "as_of": "2026-10-07", "sources_live": false,
+ "summary": "Rust ownership is the compile-time rule set that decides who frees memory and when, so programs are memory-safe without a garbage collector. It is why Rust can replace C and C++ in places where crashes and data races cost real money.",
+ "sections": [
+  {"title": "What it is", "bullets": ["Every value has exactly one owner; when the owner goes out of scope the value is dropped", "Values move on assignment unless the type is Copy; after a move the old name is dead", "Borrows (& and &mut) let you use a value without owning it, under the rule: many readers or one writer"]},
+  {"title": "How it shows up in business", "bullets": ["Cloud and infra teams (AWS, Cloudflare, Microsoft) rewrite hot paths in Rust to cut memory bugs and CPU cost", "Security mandates (US CISA memory-safety guidance, 2023–2025) make Rust a procurement talking point", "Hiring: 'knows the borrow checker' separates people who can ship Rust from people who have read about it"]},
+  {"title": "How it shows up in life", "bullets": ["The same mental model (one owner, explicit sharing) helps when reasoning about any shared resource: a car key, a shared doc", "Learning it teaches you to notice aliasing bugs in every other language"]},
+  {"title": "What people get wrong", "bullets": ["Thinking a borrow ends at the closing brace; it ends at the last use (NLL)", "Reaching for .clone() everywhere instead of restructuring who owns what", "Assuming lifetimes are about how long a value lives; they describe relationships between references"]}
+ ],
+ "movers": [{"name": "Rust Foundation", "role": "standards body", "why": "funds the compiler and sets the roadmap"}, {"name": "Linux kernel Rust-for-Linux", "role": "project", "why": "drivers in Rust are the biggest real-world test of ownership at scale"}, {"name": "Microsoft", "role": "company", "why": "Windows kernel components and Azure services moving to Rust"}],
+ "news": [{"date": "2025", "title": "Rust 1.8x stabilises async closures", "why": "async code gets easier to own correctly; interview questions follow"}],
+ "glossary": [{"term": "move", "means": "transfer of ownership; the source is no longer usable"}, {"term": "borrow", "means": "a reference to a value you do not own; & shared, &mut exclusive"}, {"term": "NLL", "means": "non-lexical lifetimes: a borrow ends at its last use, not at the brace"}],
+ "sources": ["The Rust Programming Language, ch. 4 and 10", "Rustlings exercises"]}

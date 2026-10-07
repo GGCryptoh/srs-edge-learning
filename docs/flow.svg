@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 330" font-family="-apple-system,Segoe UI,Inter,Helvetica,Arial,sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#6b7280"/></marker>
+    <style>
+      .box{fill:#fff;stroke:#cbd5e1;stroke-width:1.5;rx:14}
+      .hot{fill:#eef4ff;stroke:#2563eb}
+      .t{font-size:17px;font-weight:700;fill:#111827}
+      .s{font-size:13px;fill:#4b5563}
+      .n{font-size:12px;font-weight:700;fill:#2563eb}
+      .l{stroke:#6b7280;stroke-width:1.6;fill:none;marker-end:url(#a)}
+      .loop{stroke:#f59e0b;stroke-width:1.8;fill:none;stroke-dasharray:6 5;marker-end:url(#a)}
+      .cap{font-size:12px;fill:#92400e;font-weight:600}
+      @media (prefers-color-scheme: dark){.box{fill:#171a21;stroke:#334155}.hot{fill:#1d2a4a;stroke:#7aa2ff}.t{fill:#e8eaee}.s{fill:#9aa3af}.n{fill:#7aa2ff}}
+    </style>
+  </defs>
+  <g>
+    <rect class="box" x="20" y="90" width="180" height="110" rx="14"/>
+    <text class="n" x="36" y="116">1 · TOPIC</text><text class="t" x="36" y="142">Pick a topic</text>
+    <text class="s" x="36" y="164">name · goal · your level</text><text class="s" x="36" y="182">"pass the interview"</text>
+  </g>
+  <path class="l" d="M200 145 L250 145"/>
+  <g>
+    <rect class="box" x="250" y="90" width="180" height="110" rx="14"/>
+    <text class="n" x="266" y="116">2 · BRIEF</text><text class="t" x="266" y="142">Curated read</text>
+    <text class="s" x="266" y="164">cliff notes or bullets</text><text class="s" x="266" y="182">business · life · movers · news</text>
+  </g>
+  <path class="l" d="M430 145 L480 145"/>
+  <g>
+    <rect class="box" x="480" y="90" width="180" height="110" rx="14"/>
+    <text class="n" x="496" y="116">3 · MAP</text><text class="t" x="496" y="142">4–12 categories</text>
+    <text class="s" x="496" y="164">foundations → advanced</text><text class="s" x="496" y="182">the agent builds it</text>
+  </g>
+  <path class="l" d="M660 145 L710 145"/>
+  <g>
+    <rect class="box hot" x="710" y="80" width="200" height="130" rx="14"/>
+    <text class="n" x="726" y="106">4 · FIND YOUR EDGE</text><text class="t" x="726" y="132">Timed rounds</text>
+    <text class="s" x="726" y="154">read · 4 choices · countdown</text><text class="s" x="726" y="172">instant why · harder as you win</text>
+    <text class="s" x="726" y="192">edge = top level held at 60%+</text>
+  </g>
+  <path class="l" d="M910 145 L960 145"/>
+  <g>
+    <rect class="box" x="960" y="90" width="220" height="110" rx="14"/>
+    <text class="n" x="976" y="116">5 · PUSH IT OUTWARD</text><text class="t" x="976" y="142">Diagnose → protocol</text>
+    <text class="s" x="976" y="164">root cause of your misses</text><text class="s" x="976" y="182">3–7 tasks away from the screen</text>
+  </g>
+  <!-- SRS loop -->
+  <path class="loop" d="M1070 200 L1070 262 L810 262 L810 212"/>
+  <text class="cap" x="640" y="300">spaced repetition: every question you've met comes back right before you'd forget it</text>
+  <path class="loop" d="M810 262 L570 262 L570 212"/>
+  <text class="cap" x="430" y="282">re-test at the next level ↑</text>
+  <text class="s" x="20" y="40" font-size="14">How a topic flows — the page measures you, your AI agent writes the content</text>
+</svg>

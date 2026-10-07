@@ -1,0 +1,58 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SRS Edge Learning</title>
+<style>:root{--bg:#fafafa;--fg:#16181d;--mut:#6b7280;--line:#e5e7eb;--card:#fff;--acc:#2563eb}@media(prefers-color-scheme:dark){:root{--bg:#0f1115;--fg:#e8eaee;--mut:#9aa3af;--line:#262a33;--card:#171a21;--acc:#7aa2ff}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 -apple-system,Inter,system-ui,sans-serif}main{max-width:880px;margin:0 auto;padding:32px 16px 80px}h1{font-size:40px;line-height:1.1;margin:18px 0 10px}h2{font-size:22px;margin:36px 0 10px}h3{font-size:17px;margin:20px 0 6px}.lead{font-size:19px;color:var(--mut)}.mut{color:var(--mut);font-size:14px}
+.btn{display:inline-block;background:var(--acc);color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:600;margin:14px 10px 0 0}.btn.s{background:transparent;color:var(--acc);border:1px solid var(--acc)}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:12px 0}code{background:var(--line);padding:1px 6px;border-radius:5px;font-size:14px}pre{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;position:relative}pre code{background:none;padding:0}img{max-width:100%;border-radius:12px;border:1px solid var(--line);margin:8px 0}img.hdr{border:0}
+.copy{position:absolute;top:8px;right:8px;font:13px system-ui;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:7px;padding:4px 9px;cursor:pointer}ul{padding-left:20px}li{margin:6px 0}table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}</style></head><body><main>
+<img class="hdr" src="docs/header.svg" alt="">
+<h1>SRS Edge Learning</h1><p class="lead">SRS Edge Learning — get smart at any topic by finding the edge of what you know and pushing it outward. Spins up a local hub (127.0.0.1:4848) that remembers every topic; for a new topic it writes a curated brief (cliff notes or short bullets — what it is, how it applies in business and life, the movers, recent news), then maps the topic into categories, drills you with timed multiple-choice questions that get harder until it finds your edge, diagnoses your misses into a training protocol, and schedules spaced-repetition reviews so you get smarter over time. The agent is the backend (no API key), so it runs in Claude Code, Codex and Copilot CLI alike.</p>
+<a class="btn" href="https://github.com/GGCryptoh/srs-edge-learning/releases/latest/download/srs-edge-learning.zip">Download srs-edge-learning.zip</a><a class="btn s" href="https://github.com/GGCryptoh/srs-edge-learning">View on GitHub</a>
+<h2>Install in one line</h2><div class="card"><h3>macOS / Linux</h3><pre><code id="c1">curl -fsSL https://raw.githubusercontent.com/GGCryptoh/srs-edge-learning/main/install.sh | bash</code><button class="copy" onclick="cp('c1',this)">Copy</button></pre><h3>Windows (PowerShell)</h3><pre><code id="c2">irm https://raw.githubusercontent.com/GGCryptoh/srs-edge-learning/main/install.ps1 | iex</code><button class="copy" onclick="cp('c2',this)">Copy</button></pre><p>Then open your agent in a new session and type <code>/srs-edge-learning &lt;topic&gt;</code>.</p></div>
+<img src="docs/screenshots/srs-home.png" alt="screenshot"><img src="docs/screenshots/srs-quiz.png" alt="screenshot"><img src="docs/screenshots/srs-progress.png" alt="screenshot"><img src="docs/screenshots/srs-brief.png" alt="screenshot">
+<h3>The problem</h3>
+<p>Most of us &quot;learn&quot; by consuming: read the article, watch the video, ask ChatGPT to explain it, nod, move on. A week later it&#x27;s gone. Memory research has known for a century why: knowledge sticks when you <b>produce</b> it under a bit of pressure (answer, get corrected, try again), not when you passively take it in. And it sticks best when the questions land just past the edge of what you already know — hard enough to make you think, not so hard that you stall.</p>
+<p>AI makes the consuming side effortless, which is exactly the trap. This skill flips it: your AI agent becomes the examiner, the roadmap builder, the explainer and the flashcard clerk, and you do the producing.</p>
+<h3>What it is</h3>
+<p>A skill for AI coding agents (Claude Code, Codex, GitHub Copilot CLI) plus a small local web page. You pick a topic. The page and the agent then work through four stages:</p>
+<ol>
+<li><b>Brief.</b> Cliff notes or short bullets: what the thing is, how it shows up in business and in life, who the movers are, what happened recently, the words to know. Written for *your* goal (&quot;pass an interview&quot;, &quot;explain it to a client&quot;).</li>
+<li><b>Map.</b> The agent splits the topic into 4–12 categories, foundations first.</li>
+<li><b>Find your edge.</b> Timed multiple-choice rounds. You get a few seconds to read the question, then four choices and a countdown. Right or wrong shows instantly with a one-line explanation. Questions get harder as you get them right. Per category, the page works out your *edge*: the hardest level you still hold at 60%+.</li>
+<li><b>Push it outward.</b> Press *Diagnose my misses* and the agent reads what you got wrong, names the one misunderstanding behind most of it, and writes a training protocol: 3–7 things to do away from the screen, with a date to re-test. Meanwhile every question you&#x27;ve met goes into a spaced-repetition deck, so it comes back right before you&#x27;d forget it.</li>
+</ol>
+<p>Run the skill again next week and it opens the same page with every topic, your edge per category, a day streak, and what&#x27;s due for review.</p>
+<h3>Why it works</h3>
+<ul>
+<li><b>Production, not consumption.</b> Every minute on the page is you answering, not reading.</li>
+<li><b>Zone of proximal development.</b> Questions are pitched at your measured edge plus one level, so they&#x27;re always just out of reach.</li>
+<li><b>Drill first, then learn.</b> The first round is a diagnosis. You find out what you don&#x27;t know before you spend a minute studying.</li>
+<li><b>Spaced repetition.</b> Right answers come back in 1 day, 3 days, then stretching gaps. Wrong answers come back tomorrow.</li>
+<li><b>A checker, not a cheerleader.</b> Four fixed choices and one answer. The AI can&#x27;t agree with you, and the brief says what date its knowledge is from.</li>
+</ul>
+<h3>What you need</h3>
+<ul>
+<li>A Mac, Windows or Linux machine with Python 3 (Macs have it).</li>
+<li>An AI coding agent that reads skills: Claude Code, Codex CLI, or GitHub Copilot CLI. No API key is needed by the skill itself; it uses the agent you already pay for.</li>
+<li>Five minutes to install.</li>
+</ul>
+<h3>Five-minute walkthrough</h3>
+<ol>
+<li>Install (see below). In your agent, type <code>/gh-learn-something Kubernetes networking</code> (or whatever you want to get smart at).</li>
+<li>The hub opens in your browser. Pick <b>Cliff notes</b>. Within a minute the brief appears.</li>
+<li>Click <b>Go deeper → Build the map</b>, then <b>Start a round</b>. Answer with the number keys. Stop when you like.</li>
+<li>Open <b>Progress</b> to see your edge per category. Press <b>Diagnose my misses</b>.</li>
+<li>Tomorrow, open <b>Train</b> and review what&#x27;s due. Repeat.</li>
+</ol>
+<h3>Honest limits</h3>
+<ul>
+<li>Multiple choice only. That keeps the timer fair and the edge maths honest, but it won&#x27;t grade an essay. The training protocol is where the free-form work lives.</li>
+<li>The agent writes questions in batches of 10–12. When the bank runs low mid-round the page asks for more and you wait a minute.</li>
+<li>News and &quot;movers&quot; are only as fresh as your agent&#x27;s web access. The brief states the date and whether the web was checked.</li>
+<li>Everything stays on your machine in one folder. Nothing is uploaded.</li>
+</ul>
+<h3>Where this comes from</h3>
+<p>I built this because it already worked on me. I&#x27;ve been learning Mandarin with spaced repetition and timed recall, and compressed almost two years of language levelling into 11 months. The pattern is simple: test before you study, keep every question just past your edge, and let scheduling decide what comes back. This skill applies the same pattern to any topic, with an AI agent writing the questions instead of a textbook.</p>
+<p>Built by Geoff Hopkins. MIT licensed.</p>
+<img src="docs/architecture.svg" alt="architecture.svg"><img src="docs/flow.svg" alt="flow.svg">
+<h2>Manual install</h2><div class="card"><ol><li>Download the zip above and unzip it. You get a folder <code>srs-edge-learning/</code>.</li><li>Move it to where your agent looks for skills:<ul><li><b>Claude Code</b> → <code>~/.claude/skills/srs-edge-learning/</code></li><li><b>Codex CLI</b> → <code>~/.codex/skills/srs-edge-learning/  (or paste SKILL.md into AGENTS.md)</code></li><li><b>GitHub Copilot CLI</b> → <code>~/.copilot/skills/srs-edge-learning/  (or .github/skills/srs-edge-learning/ in a repo)</code></li><li><b>Cursor / Windsurf / other agents</b> → <code>any folder, then add this line to your rules file: read &lt;path&gt;/SKILL.md and follow it</code></li></ul></li><li>New session → <code>/srs-edge-learning &lt;topic&gt;</code>. If the agent can't find it: <code>Read srs-edge-learning/SKILL.md and follow it.</code></li></ol></div>
+<p class="mut" style="margin-top:40px">MIT © 2026 Geoff Hopkins.  </p>
+<script>function cp(id,b){navigator.clipboard.writeText(document.getElementById(id).textContent).then(()=>{b.textContent='Copied ✓';setTimeout(()=>b.textContent='Copy',1500)})}</script></main></body></html>
