@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-10-19
+- **Manage topics.** ⋯ menu on every topic (home card and topic header): rename / change goal and level (slug and URL stay), archive (home shows archived topics in a collapsed section), export the topic as JSON, delete with Undo (topics go to `$LEARN_HOME/trash/`). CLI: `rename`, `archive`, `unarchive`, `remove [--purge]`, `undelete`.
+- **Flag a bad question.** "⚑ flag this question" (or `f`) on the result card: pick a reason, optionally ask the agent for a replacement. A retired question leaves the bank, the edge maths and the SRS deck, is listed on Progress with a Restore button, and reaches the agent as `context.flagged`. CLI: `questions`, `retire [--restore]`.
+- **Backup and restore.** ⚙ → Download backup (zip of every topic + settings) and Restore from file (zip or a single topic JSON; tick to overwrite existing). CLI: `backup [--out]`, `restore <file> [--overwrite]`.
+- **Port fallback and hub reuse.** If 4848 is taken by something else the hub takes the next free port (up to +10), records it in `hub.json`, and `open` reuses a running hub for the same `LEARN_HOME` (checked via `/api/ping`); another `LEARN_HOME` gets its own port.
+- **Several agents on one hub.** `pending` claims what it prints (`--peek` to look only); claims lapse 15 min after the agent's last beat or on `fulfil`; `fulfil` refuses a request another live agent claimed unless `--force`. All writes take a cross-process lock (`$LEARN_HOME/.lock`). Presence is per agent (`agents/`), and the header says how many are listening; an agent that is writing a response still counts as online.
+- **Progress graphs.** Edge over time (overall line, per-category small multiples), 7-day rolling accuracy, review retention, a 16-week activity heatmap on the home page and per topic, sparklines in the stat tiles, and a "coming up" review schedule on Train.
+- **UI.** Toasts, Esc / backdrop closes dialogs, cancel link on waiting cards, hover highlight on charts, favicon, archived and empty states, "claimed" shown on waiting cards.
+- Fixes: SRS intervals capped at 365 days (a card answered right ~60 times used to overflow the date); a day streak no longer breaks at midnight before you've played today; `examples/sample-topic.json` now exists (44 questions, three weeks of attempts) and is used by the tests.
+- Tests (`tests/test_learn.py`, stdlib unittest) and GitHub Actions: `ci.yml` runs them on Linux, macOS and Windows with Python 3.9 and 3.13 and smokes the CLI; `release.yml` builds and attaches `srs-edge-learning.zip` when a `v*` tag is pushed.
 - Stronger length-tell guard on question batches. Per question the validator now rejects a right answer that is the longest **or shortest** by far (no 40-char floor any more), and a right answer flanked by two stub distractors (one matching distractor was enough before). Per batch it rejects the right answer being the strictly longest or shortest option in more than 45% of questions (was 60%, longest only) and a mean right/distractor length ratio outside 0.8–1.2. `validate` and `fulfil` print a length report. `examples/sample-questions.json` rewritten so its distractors match the right answer's length (it failed the old check).
 
 ## 0.1.0 — 2026-10-07

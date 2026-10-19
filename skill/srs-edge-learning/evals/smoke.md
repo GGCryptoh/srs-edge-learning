@@ -21,3 +21,11 @@ Expect: `diagnose` fulfilled with a one-sentence recognisable root cause, 3–7 
 ## 4. Status
 Prompt: `how am I doing on kubernetes?`
 Expect: `learn.py status kubernetes-networking` summarised in plain words (edge per category, due cards); no questions generated.
+
+## 5. Manage a topic and flag a question
+Prompt: (user renames a topic from the ⋯ menu, archives another, flags a question during a round with "the marked answer is wrong")
+Expect: the rename shows on the page and in `learn.py topics` with the same slug; the archived topic leaves the home grid and appears under "archived"; the flagged question disappears from the round, `learn.py questions <slug> --retired` lists it with the reason, and the next `questions` request carries it in `context.flagged` with the note "replace a flagged question"; the agent's replacement is on the same idea and does not repeat the retired text.
+
+## 6. Backup, new machine, two agents
+Prompt: `back up my learning data` then, on another machine, `restore it`
+Expect: `learn.py backup` prints a zip path; `learn.py restore <zip>` on a fresh `LEARN_HOME` adds every topic and `topics` lists them; running it again skips them. With two agents in the `pending --wait` loop on one hub, each request is fulfilled exactly once (the second agent's `pending` does not print requests the first one claimed; `fulfil` on a live claim refuses without `--force`). If port 4848 is busy, `open` prints the port it took and the agent passes that URL on.

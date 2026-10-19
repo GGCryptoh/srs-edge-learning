@@ -1,0 +1,23 @@
+name: release
+on:
+  push:
+    tags: ["v*"]
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tests must pass before a release
+        run: python3 -m unittest discover -s skill/srs-edge-learning/tests
+      - name: Build srs-edge-learning.zip (unzips to srs-edge-learning/ inside a skills folder)
+        run: |
+          rm -rf dist && mkdir dist
+          (cd skill && zip -r ../dist/srs-edge-learning.zip srs-edge-learning -x "*/__pycache__/*" -x "*/tests/*" -x "*.pyc")
+          unzip -l dist/srs-edge-learning.zip
+      - name: Attach to the GitHub release for this tag
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/srs-edge-learning.zip
+          generate_release_notes: true

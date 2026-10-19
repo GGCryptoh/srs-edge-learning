@@ -1,0 +1,2377 @@
+{
+ "slug": "rust-ownership",
+ "name": "Rust ownership",
+ "goal": "pass a systems interview",
+ "created": "2026-09-28T18:59:02",
+ "level_hint": 2,
+ "archived": false,
+ "brief": {
+  "mode": "bullets",
+  "as_of": "2026-10-07",
+  "sources_live": false,
+  "summary": "Rust ownership is the compile-time rule set that decides who frees memory and when, so programs are memory-safe without a garbage collector. It is why Rust can replace C and C++ in places where crashes and data races cost real money.",
+  "sections": [
+   {
+    "title": "What it is",
+    "bullets": [
+     "Every value has exactly one owner; when the owner goes out of scope the value is dropped",
+     "Values move on assignment unless the type is Copy; after a move the old name is dead",
+     "Borrows (& and &mut) let you use a value without owning it, under the rule: many readers or one writer"
+    ]
+   },
+   {
+    "title": "How it shows up in business",
+    "bullets": [
+     "Cloud and infra teams (AWS, Cloudflare, Microsoft) rewrite hot paths in Rust to cut memory bugs and CPU cost",
+     "Security mandates (US CISA memory-safety guidance, 2023–2025) make Rust a procurement talking point",
+     "Hiring: 'knows the borrow checker' separates people who can ship Rust from people who have read about it"
+    ]
+   },
+   {
+    "title": "How it shows up in life",
+    "bullets": [
+     "The same mental model (one owner, explicit sharing) helps when reasoning about any shared resource: a car key, a shared doc",
+     "Learning it teaches you to notice aliasing bugs in every other language"
+    ]
+   },
+   {
+    "title": "What people get wrong",
+    "bullets": [
+     "Thinking a borrow ends at the closing brace; it ends at the last use (NLL)",
+     "Reaching for .clone() everywhere instead of restructuring who owns what",
+     "Assuming lifetimes are about how long a value lives; they describe relationships between references"
+    ]
+   }
+  ],
+  "movers": [
+   {
+    "name": "Rust Foundation",
+    "role": "standards body",
+    "why": "funds the compiler and sets the roadmap"
+   },
+   {
+    "name": "Linux kernel Rust-for-Linux",
+    "role": "project",
+    "why": "drivers in Rust are the biggest real-world test of ownership at scale"
+   },
+   {
+    "name": "Microsoft",
+    "role": "company",
+    "why": "Windows kernel components and Azure services moving to Rust"
+   }
+  ],
+  "news": [
+   {
+    "date": "2025",
+    "title": "Rust 1.8x stabilises async closures",
+    "why": "async code gets easier to own correctly; interview questions follow"
+   }
+  ],
+  "glossary": [
+   {
+    "term": "move",
+    "means": "transfer of ownership; the source is no longer usable"
+   },
+   {
+    "term": "borrow",
+    "means": "a reference to a value you do not own; & shared, &mut exclusive"
+   },
+   {
+    "term": "NLL",
+    "means": "non-lexical lifetimes: a borrow ends at its last use, not at the brace"
+   }
+  ],
+  "sources": [
+   "The Rust Programming Language, ch. 4 and 10",
+   "Rustlings exercises"
+  ],
+  "generated": "2026-09-28T19:01:40"
+ },
+ "categories": [
+  {
+   "id": "ownership",
+   "name": "Ownership & moves",
+   "why": "everything else assumes you can say who owns a value and when it drops"
+  },
+  {
+   "id": "borrowing",
+   "name": "Borrowing & references",
+   "why": "the borrow checker is where most beginners stall"
+  },
+  {
+   "id": "lifetimes",
+   "name": "Lifetimes",
+   "why": "the part that separates working knowledge from fluency"
+  },
+  {
+   "id": "smart-pointers",
+   "name": "Smart pointers",
+   "why": "Box, Rc, RefCell: the escape hatches, and their costs"
+  }
+ ],
+ "questions": [
+  {
+   "cat": "ownership",
+   "level": 1,
+   "q": "In Rust, what happens to a `String` value when the variable that owns it goes out of scope?",
+   "choices": [
+    "It becomes a null reference",
+    "It is moved onto the heap",
+    "Its memory is freed automatically",
+    "It leaks unless you call free() on it yourself"
+   ],
+   "answer": 2,
+   "why": "Rust drops a value and frees its memory at the end of its owner's scope. No garbage collector, no manual free.",
+   "tags": [],
+   "id": "q00571091",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "ownership",
+   "level": 2,
+   "q": "`let a = String::from(\"hi\"); let b = a; println!(\"{}\", a);` — what does the compiler report?",
+   "choices": [
+    "Error: borrow of moved value `a`",
+    "Warning: unused variable `b`, then prints hi",
+    "Error: `String` is not `Copy`, add `.clone()`",
+    "Prints hi, since `b` copies `a`"
+   ],
+   "answer": 0,
+   "why": "Assigning a non-Copy value moves it; `a` is no longer valid. Fix with `a.clone()` or borrow with `&a`.",
+   "tags": [],
+   "id": "q01666179",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "ownership",
+   "level": 2,
+   "q": "Which of these types is `Copy`, so assignment duplicates it instead of moving it?",
+   "choices": [
+    "`Vec<u8>`: a vector of bytes",
+    "`(i32, bool)`: a tuple of Copy types",
+    "`Box<i32>`: a heap-allocated integer",
+    "`String`: an owned UTF-8 buffer"
+   ],
+   "answer": 1,
+   "why": "Tuples of Copy types are Copy. Anything that owns heap memory (Vec, String, Box) is not, because duplicating it would double-free.",
+   "tags": [],
+   "id": "q02279602",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "ownership",
+   "level": 3,
+   "q": "A function `fn eat(s: String)` is called as `eat(name); println!(\"{}\", name);`. What is the least-change fix that compiles and keeps `eat`'s signature?",
+   "choices": [
+    "Wrap `name` in `Rc` and pass `Rc::clone(&name)` instead",
+    "Mark `name` as `mut` so it can be reused after the call",
+    "Call `eat(name.clone())` so the function gets its own copy",
+    "Change the call to `eat(&name)` and let auto-deref handle it"
+   ],
+   "answer": 2,
+   "why": "Passing by value moves. With the signature fixed, cloning is the only way to keep `name`. Changing `eat` to take `&str` would be the better design fix.",
+   "tags": [],
+   "id": "q03105780",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "ownership",
+   "level": 4,
+   "q": "Why does `let v = vec![String::new()]; let s = v[0];` fail while `let s = &v[0];` compiles?",
+   "choices": [
+    "`String` cannot be moved out of any container, only cloned",
+    "Indexing yields a place; moving out of a Vec through it would leave a hole",
+    "`Vec` only hands out references because its buffer is not `Sized`",
+    "Indexing returns a temporary copy that is dropped again at the end of the statement"
+   ],
+   "answer": 1,
+   "why": "You cannot move out of an index expression because the Vec would be left partially uninitialised. Borrow it, clone it, or use `v.remove(0)` / `swap_remove`.",
+   "tags": [],
+   "id": "q04264773",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "borrowing",
+   "level": 1,
+   "q": "What does `&mut T` give you that `&T` does not?",
+   "choices": [
+    "A copy of the value that is freed separately",
+    "A reference that can be sent to and shared across other threads",
+    "Permission to change the value through the reference",
+    "A reference that lives for the whole program"
+   ],
+   "answer": 2,
+   "why": "`&mut` is an exclusive, mutable borrow. `&` is a shared, read-only borrow; many can coexist.",
+   "tags": [],
+   "id": "q05754851",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "borrowing",
+   "level": 2,
+   "q": "How many `&mut` references to one value may be live at the same time?",
+   "choices": [
+    "Any number, as long as they are in different functions",
+    "One per thread that holds a handle to the value",
+    "Two: one for reading and one for writing",
+    "Exactly one, and no `&` references alongside it"
+   ],
+   "answer": 3,
+   "why": "Aliasing XOR mutation: either any number of shared borrows, or exactly one mutable borrow, never both.",
+   "tags": [],
+   "id": "q06316107",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "borrowing",
+   "level": 3,
+   "q": "A function takes `&mut Vec<i32>`, creates `let it = v.iter();`, then calls `v.push(1)` and later uses `it`. What happens?",
+   "choices": [
+    "Compiles, with a warning that `it` is an unused iterator because `push` invalidated it",
+    "Compiles cleanly: the borrow from `iter()` ends at the `push` call, before `it` is used again",
+    "Error: `Vec<i32>` is not `Send`, so it cannot be iterated and mutated in one scope",
+    "Error: cannot borrow `*v` as mutable because it is also borrowed as immutable by `it`"
+   ],
+   "answer": 3,
+   "why": "The shared borrow from `iter()` lives as long as `it` is used. A `push` while it is alive conflicts. Non-lexical lifetimes only end the borrow after the last use of `it`.",
+   "tags": [],
+   "id": "q07944932",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "borrowing",
+   "level": 3,
+   "q": "`let r; { let x = 5; r = &x; } println!(\"{}\", r);` — what does the compiler say?",
+   "choices": [
+    "Prints 5, because integers are `Copy` and the borrow copies the value",
+    "Error: `r` must be declared `mut` before it can be assigned a reference",
+    "Error: `x` does not live long enough; it is dropped while still borrowed",
+    "Prints 5, then warns that `r` is a dangling reference at the end of main"
+   ],
+   "answer": 2,
+   "why": "`r` outlives `x`, so the reference would dangle. Copy does not change borrowing rules; `&x` still points into the inner scope.",
+   "tags": [],
+   "id": "q08916629",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "borrowing",
+   "level": 4,
+   "q": "Why does `fn first(v: &mut Vec<String>) -> &String { let f = &v[0]; v.push(String::new()); f }` fail even though `f` is read-only?",
+   "choices": [
+    "Returning a reference from a `&mut` parameter needs an explicit `'static` lifetime",
+    "A `&mut Vec` cannot hand out `&String` because the element type is not `Copy`",
+    "`push` may reallocate, so the compiler rejects every reference that was taken before a `push` call",
+    "`f` borrows from `*v` and is returned, so the push happens while that borrow is still live"
+   ],
+   "answer": 3,
+   "why": "The returned reference keeps the borrow of `v[0]` alive past the push; a mutable borrow for `push` cannot overlap it. Reorder: push first, then borrow.",
+   "tags": [],
+   "id": "q09234317",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "lifetimes",
+   "level": 1,
+   "q": "What is a lifetime annotation like `'a` in a function signature for?",
+   "choices": [
+    "Choosing which thread is allowed to own the referenced value",
+    "Telling the compiler how long returned references are tied to the inputs",
+    "Setting a timer after which the referenced memory is released back to the allocator",
+    "Marking a value as living on the heap rather than the stack"
+   ],
+   "answer": 1,
+   "why": "Lifetimes relate references to each other so the borrow checker can prove the output does not outlive what it points into. They never change how long anything lives.",
+   "tags": [],
+   "id": "q10114590",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "lifetimes",
+   "level": 2,
+   "q": "When can you omit lifetimes on a function that takes one reference and returns one?",
+   "choices": [
+    "Only when the function is marked `const` or `#[inline]`",
+    "Never: a returned reference always needs an explicit lifetime",
+    "Only when the input is `&str` and the output is `&str`",
+    "Always: elision gives the output the single input's lifetime"
+   ],
+   "answer": 3,
+   "why": "Elision rule: with exactly one input lifetime, the output gets it. Two inputs need an annotation unless one is `&self`.",
+   "tags": [],
+   "id": "q11332398",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "lifetimes",
+   "level": 3,
+   "q": "`fn longest<'a>(x: &'a str, y: &'a str) -> &'a str` is called with a `&'static str` and a `&String` made inside a block. What is the returned lifetime?",
+   "choices": [
+    "`'static`, because string literals force every other input to be promoted",
+    "Whichever input is actually returned at run time, which the borrow checker tracks per call",
+    "The shorter of the two: the inner block's, so the result cannot escape that block",
+    "The longer of the two: `'static`, because one input is a literal"
+   ],
+   "answer": 2,
+   "why": "One `'a` for both inputs means the compiler picks a region both satisfy: the shorter. The caller's result is bound to the block-local `String`.",
+   "tags": [],
+   "id": "q12180856",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "lifetimes",
+   "level": 4,
+   "q": "Why does `fn longest<'a>(x: &'a str, y: &'a str) -> &'a str` reject a call where `y` is a `String` created inside an inner block and the result is used after that block?",
+   "choices": [
+    "Because the returned reference's lifetime is tied to the shorter of the two input lifetimes",
+    "Because the compiler picks the longer of the two input lifetimes and `x` outlives the block",
+    "Because a `String` created in an inner block cannot be coerced to `&str` outside that block",
+    "Because `'a` on a returned reference must be `'static` unless both inputs are string literals"
+   ],
+   "answer": 0,
+   "why": "One lifetime parameter for both inputs means the output lives no longer than the shorter input. The inner-block `String` dies at the block end, so the result cannot outlive it.",
+   "tags": [],
+   "id": "q13143421",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "lifetimes",
+   "level": 4,
+   "q": "A struct `Parser<'a> { src: &'a str }` has `fn next(&mut self) -> &'a str`. Why is `'a` on the return, not the elided `&mut self` lifetime?",
+   "choices": [
+    "Because `&mut self` methods cannot return borrowed data under the lifetime elision rules",
+    "Because struct lifetimes always override method lifetimes on return values",
+    "So the slice is promoted to `'static` and can be stored anywhere",
+    "So the returned slice borrows the source text, not the parser, and survives the next call"
+   ],
+   "answer": 3,
+   "why": "Tying the output to `self` would freeze the parser until the slice is dropped. Tying it to `'a` says the slice points into the original text, which outlives the parser.",
+   "tags": [],
+   "id": "q14209116",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "smart-pointers",
+   "level": 1,
+   "q": "What does `Box<T>` do?",
+   "choices": [
+    "Stores a `T` on the heap and owns it through a pointer",
+    "Lets several owners share one `T` with reference counting",
+    "Allows a `T` to be mutated through a shared `&` reference at run time",
+    "Keeps a `T` alive until the end of the program"
+   ],
+   "answer": 0,
+   "why": "Box is single ownership on the heap: fixed-size handle to a possibly unsized or recursive value. Sharing is Rc/Arc; interior mutability is Cell/RefCell.",
+   "tags": [],
+   "id": "q15196107",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "smart-pointers",
+   "level": 2,
+   "q": "You need a tree where several nodes point to the same child and nothing is shared across threads. Which pointer fits?",
+   "choices": [
+    "`Rc<T>`: shared ownership with a reference count",
+    "`&'static T`: a reference that never expires",
+    "`Box<T>`: a single owner holding the child on the heap",
+    "`Arc<T>`: shared ownership that is thread-safe"
+   ],
+   "answer": 0,
+   "why": "Rc gives multiple owners in one thread cheaply. Arc pays for atomic counting you do not need; Box has exactly one owner.",
+   "tags": [],
+   "id": "q16958541",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "smart-pointers",
+   "level": 3,
+   "q": "`let a = Rc::new(RefCell::new(vec![1])); let b = a.clone(); b.borrow_mut().push(2); println!(\"{:?}\", a.borrow());` — what happens?",
+   "choices": [
+    "Prints [1]: `clone` on `Rc` deep-copies the inner `RefCell` together with its vector, so `a` is untouched",
+    "Prints [1, 2]: both handles share one cell and the mutable borrow ended before the read",
+    "Panics: `a` and `b` hold borrows of the same cell at the same moment",
+    "Error: `RefCell` cannot be mutated through an `Rc` because `Rc` is not `DerefMut`"
+   ],
+   "answer": 1,
+   "why": "Rc::clone shares the allocation. The temporary `borrow_mut` is dropped at the semicolon, so the later `borrow` is fine.",
+   "tags": [],
+   "id": "q17965745",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "smart-pointers",
+   "level": 3,
+   "q": "When does `RefCell` panic instead of failing to compile?",
+   "choices": [
+    "When `borrow()` is called on a cell holding a `Copy` type",
+    "When a second borrow conflicts with a live one at run time",
+    "When the value inside it implements `Drop` and is cloned",
+    "When it is moved across a thread boundary without being wrapped in `Arc`"
+   ],
+   "answer": 1,
+   "why": "RefCell moves the aliasing check from compile time to run time; a conflicting `borrow_mut` while a borrow is live panics with 'already borrowed'.",
+   "tags": [],
+   "id": "q18021021",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "smart-pointers",
+   "level": 4,
+   "q": "Two `Rc<RefCell<Node>>` values point at each other through `next` fields. What goes wrong, and what is the usual fix?",
+   "choices": [
+    "Drop runs twice on the shared node; wrap the inner value in `ManuallyDrop`",
+    "`RefCell` detects the cycle and panics; break it with `Rc::try_unwrap`",
+    "The borrow checker rejects the cycle at compile time; switch to raw pointers instead",
+    "Neither count reaches zero so both leak; make one direction a `Weak` pointer"
+   ],
+   "answer": 3,
+   "why": "Rc cycles are never freed because each keeps the other's count above zero. A Weak back-edge does not count toward ownership and breaks the cycle.",
+   "tags": [],
+   "id": "q19412077",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "ownership",
+   "level": 1,
+   "q": "What is the owner of a value in Rust?",
+   "choices": [
+    "The one variable or field responsible for dropping it",
+    "Any variable that currently holds a reference to it",
+    "The function in which the value was first created",
+    "The thread on which the value was allocated"
+   ],
+   "answer": 0,
+   "why": "Each value has exactly one owner at a time; when the owner goes out of scope the value is dropped. References borrow, they do not own.",
+   "tags": [],
+   "id": "q20514003",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "ownership",
+   "level": 1,
+   "q": "What does `drop(x)` do when you call it explicitly?",
+   "choices": [
+    "Marks `x` as unused so the compiler stops warning about it",
+    "Runs `x`'s destructor now and ends its ownership early",
+    "Converts `x` into a reference that lives until the scope ends",
+    "Returns `x`'s memory to the stack without running destructors"
+   ],
+   "answer": 1,
+   "why": "`std::mem::drop` takes ownership of its argument, so the value is destroyed at the call instead of at the end of the scope.",
+   "tags": [],
+   "id": "q21608485",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "ownership",
+   "level": 2,
+   "q": "`let s = String::from(\"x\"); let t = &s; let u = s;` — what does the compiler report?",
+   "choices": [
+    "Compiles with a warning that `t` is a dangling reference",
+    "Compiles: the borrow `t` is redirected to `u` when `s` moves",
+    "Error: cannot borrow `s` as immutable while it is being moved",
+    "Error: cannot move out of `s` because it is borrowed, if `t` is used afterwards"
+   ],
+   "answer": 3,
+   "why": "Moving `s` while a live borrow `t` exists would leave `t` dangling. If `t` is never used after the move, non-lexical lifetimes let it compile.",
+   "tags": [],
+   "id": "q22214215",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "ownership",
+   "level": 3,
+   "q": "A `match` on `opt: Option<String>` with arm `Some(s) => …` later uses `opt` again. What is the idiomatic fix?",
+   "choices": [
+    "Replace the `match` with `if let` because it never moves its scrutinee",
+    "Match on `&opt` or use `opt.as_ref()` so the arm binds a reference",
+    "Declare `opt` as `mut` so a moved value can be reassigned by the match",
+    "Add `#[derive(Copy)]` to `String` so the arm copies the value"
+   ],
+   "answer": 1,
+   "why": "Matching by value moves the `String` out of the option. Match on a reference (or `as_ref`/`as_deref`) to borrow instead.",
+   "tags": [],
+   "id": "q23749229",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "ownership",
+   "level": 3,
+   "q": "Why does `for s in v { … }` on `v: Vec<String>` make `v` unusable afterwards, while `for s in &v` does not?",
+   "choices": [
+    "The first moves the loop variable to the heap; the second keeps it on the stack",
+    "The first calls `into_iter()` and consumes the vector; the second iterates over borrows",
+    "The first clones each string, exhausting the allocation; the second shares it",
+    "The first marks `v` as `mut`; the second keeps it immutable and so reusable"
+   ],
+   "answer": 1,
+   "why": "`for x in v` desugars to `v.into_iter()`, which takes ownership. `&v` gives an iterator of `&String`.",
+   "tags": [],
+   "id": "q24110590",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "ownership",
+   "level": 4,
+   "q": "`Option<Box<T>>` is the same size as `Box<T>`. What ownership guarantee makes that possible?",
+   "choices": [
+    "The allocator reserves a sentinel address for every `None` box",
+    "A `Box` is always exactly one machine word wide, including its tag",
+    "`Option` stores its discriminant inside the boxed value on the heap",
+    "A `Box` is never null, so the null bit pattern can encode `None`"
+   ],
+   "answer": 3,
+   "why": "Niche optimisation: because a valid `Box` pointer cannot be null, the compiler uses the null pattern for `None`. The same holds for `&T` and `NonNull<T>`.",
+   "tags": [],
+   "id": "q25035678",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "borrowing",
+   "level": 1,
+   "q": "In `fn len(s: &String) -> usize`, what does the caller keep after the call?",
+   "choices": [
+    "Full ownership of the string; the function only borrowed it",
+    "Nothing: the string was moved in and dropped on return",
+    "A copy of the string; the original was consumed by the call",
+    "A reference to the string; the function now owns the data"
+   ],
+   "answer": 0,
+   "why": "A shared borrow lends the value for the duration of the call. The caller still owns it and can use it afterwards.",
+   "tags": [],
+   "id": "q26007586",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "borrowing",
+   "level": 1,
+   "q": "What is the difference between `&s` and `&mut s` at the call site?",
+   "choices": [
+    "`&mut s` lets the callee change `s` and requires `s` to be declared `mut`",
+    "`&mut s` copies `s` before the call so the callee works on a copy",
+    "`&s` moves `s` into the callee while `&mut s` only lends it out",
+    "`&s` is only allowed for `Copy` types; `&mut s` works for any type"
+   ],
+   "answer": 0,
+   "why": "A mutable borrow is exclusive and needs a mutable binding. Neither form moves the value.",
+   "tags": [],
+   "id": "q27505859",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "borrowing",
+   "level": 2,
+   "q": "`let mut v = vec![1]; let a = &v; let b = &v; v.push(2); println!(\"{}{}\", a[0], b[0]);` — result?",
+   "choices": [
+    "Error: cannot borrow `v` as immutable more than once at a time",
+    "Prints 11; the two shared borrows are refreshed after the push",
+    "Prints 11, with a warning that `push` may have reallocated the buffer",
+    "Error: cannot borrow `v` as mutable because it is also borrowed as immutable"
+   ],
+   "answer": 3,
+   "why": "The shared borrows `a` and `b` are still used after the `push`, so the exclusive borrow `push` needs conflicts with them.",
+   "tags": [],
+   "id": "q28696954",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "borrowing",
+   "level": 2,
+   "q": "Which signature is most flexible for a function that only reads a string argument?",
+   "choices": [
+    "`fn f(s: String)`: the caller can always pass `.clone()`",
+    "`fn f(s: &str)`: accepts `&String`, literals and slices alike",
+    "`fn f(s: &String)`: it works for every owned string",
+    "`fn f(s: Box<str>)`: it avoids a second allocation"
+   ],
+   "answer": 1,
+   "why": "`&String` derefs to `&str`, and literals are already `&str`, so `&str` takes everything without allocating.",
+   "tags": [],
+   "id": "q29674933",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "borrowing",
+   "level": 3,
+   "q": "`let x = &mut v; let y = &mut v; x.push(1);` fails, but `let x = &mut v; x.push(1); let y = &mut v; y.push(2);` compiles. Why?",
+   "choices": [
+    "The compiler reorders the statements so that the two borrows never meet",
+    "The second version declares the borrows in order of creation, which the checker allows",
+    "`push` consumes the mutable reference, releasing the borrow for the next one",
+    "Non-lexical lifetimes end `x`'s borrow at its last use, so `y` does not overlap it"
+   ],
+   "answer": 3,
+   "why": "A borrow lasts until its last use, not until the end of the block. In the second snippet `x` is dead before `y` is created.",
+   "tags": [],
+   "id": "q30549755",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "borrowing",
+   "level": 4,
+   "q": "A method `fn get(&self, k: &str) -> Option<&String>` on a cache is followed by `self.map.insert(..)` in the same function when it returns `None`. Why does the obvious code fail, and what fixes it cleanly?",
+   "choices": [
+    "The `None` arm still holds the borrow from `get`; use the `entry` API or re-look-up after the insert",
+    "Returning `Option<&String>` forces `'static`; return `Option<String>` instead",
+    "`insert` requires `&mut self` but `get` already made `self` immutable for the whole method",
+    "The map's hasher is borrowed by `get`; call `self.map.rehash()` before inserting"
+   ],
+   "answer": 0,
+   "why": "The conditional borrow problem: the returned reference keeps the map borrowed across the branch. `entry(k).or_insert_with(..)` expresses it in one borrow.",
+   "tags": [],
+   "id": "q31267929",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "lifetimes",
+   "level": 1,
+   "q": "What does `'static` on a reference mean?",
+   "choices": [
+    "The reference cannot be copied or passed to a function",
+    "The reference may only point at compile-time constants",
+    "The referenced data lives for the rest of the program",
+    "The referenced data is stored on the stack of `main`"
+   ],
+   "answer": 2,
+   "why": "`&'static T` points at data that is valid until the program exits: string literals, leaked boxes, statics. Owned types can also satisfy a `'static` bound.",
+   "tags": [],
+   "id": "q32197394",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "lifetimes",
+   "level": 1,
+   "q": "Which statement about lifetimes is true?",
+   "choices": [
+    "They insert run-time checks that abort when a reference goes stale",
+    "They are only needed when a program uses more than one thread",
+    "They are checked at compile time and erased before the program runs",
+    "They extend how long a value lives to match its longest reference"
+   ],
+   "answer": 2,
+   "why": "Lifetimes are a static proof that references are valid. They have no run-time cost and never change when a value is dropped.",
+   "tags": [],
+   "id": "q33756483",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "lifetimes",
+   "level": 2,
+   "q": "A struct holds a `&str`. What must its definition include?",
+   "choices": [
+    "A `Box` around the slice so the struct can own it",
+    "The `'static` lifetime, because structs may outlive any stack frame",
+    "A lifetime parameter, like `struct S<'a> { s: &'a str }`",
+    "A `Drop` implementation that releases the borrowed slice"
+   ],
+   "answer": 2,
+   "why": "A struct containing a reference must declare how long that reference is valid; the parameter ties the struct's lifetime to the borrowed data.",
+   "tags": [],
+   "id": "q34635779",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "lifetimes",
+   "level": 2,
+   "q": "Why does `fn first_word(s: &str) -> &str` compile without any `'a`?",
+   "choices": [
+    "`&str` is always `'static`, so no annotation can change it",
+    "String slices carry their lifetime at run time in the fat pointer",
+    "Elision: one input lifetime is assigned to the output automatically",
+    "The compiler infers lifetimes from the function body at each call"
+   ],
+   "answer": 2,
+   "why": "The elision rules cover the common cases: a single input lifetime flows to every output reference.",
+   "tags": [],
+   "id": "q35115283",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "lifetimes",
+   "level": 3,
+   "q": "`impl<'a> Foo<'a> { fn get(&self) -> &'a str }` versus `fn get(&self) -> &str`: when does the difference matter?",
+   "choices": [
+    "When the caller wants the returned slice to outlive the `&self` borrow",
+    "When the slice has to be stored back into another field of `Foo`",
+    "When `Foo` is used from more than one thread at a time",
+    "When `Foo` is generic over a type that is not `Sized`"
+   ],
+   "answer": 0,
+   "why": "With the elided form the result borrows `self`. Tying it to `'a` says it borrows the original data, so `self` can be mutated or dropped while the slice lives.",
+   "tags": [],
+   "id": "q36142877",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "lifetimes",
+   "level": 3,
+   "q": "A function returns `&String` to a `String` it created locally. What does the compiler say?",
+   "choices": [
+    "Error: missing lifetime specifier, add `'static` to the return type",
+    "Compiles: the local is promoted to the heap for the caller",
+    "Compiles with a warning that the caller must `clone` immediately",
+    "Error: returns a reference to data owned by the current function"
+   ],
+   "answer": 3,
+   "why": "The local is dropped when the function returns, so the reference would dangle. Return the `String` by value instead.",
+   "tags": [],
+   "id": "q37357404",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "smart-pointers",
+   "level": 1,
+   "q": "What does `Rc::clone(&a)` do?",
+   "choices": [
+    "Creates another handle to the same allocation and bumps the count",
+    "Deep-copies the value so the two handles are independent",
+    "Moves the value into a new allocation owned by the clone",
+    "Creates a weak handle that does not keep the value alive"
+   ],
+   "answer": 0,
+   "why": "Rc::clone is a cheap pointer copy plus a count increment. The value is shared; use `(*a).clone()` for a deep copy.",
+   "tags": [],
+   "id": "q38909599",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "smart-pointers",
+   "level": 1,
+   "q": "When would you reach for `Arc<T>` instead of `Rc<T>`?",
+   "choices": [
+    "When the shared value must be accessible from more than one thread",
+    "When you need to mutate the value through a shared handle",
+    "When the value's type does not implement `Clone`",
+    "When the value is large and copying it would be expensive"
+   ],
+   "answer": 0,
+   "why": "Arc uses atomic reference counting so it is `Send` and `Sync`. Within one thread, Rc is cheaper.",
+   "tags": [],
+   "id": "q39634532",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "smart-pointers",
+   "level": 2,
+   "q": "You need to mutate a counter behind a shared reference in single-threaded code. Which is the lightest tool?",
+   "choices": [
+    "`Cell<u32>`: copy the value in and out, no borrow tracking",
+    "`Mutex<u32>`: lock it on each increment",
+    "`RefCell<u32>`: dynamic borrows with a run-time check",
+    "`Rc<u32>`: clone the handle and add to the clone"
+   ],
+   "answer": 0,
+   "why": "Cell works for Copy types and has no run-time bookkeeping. RefCell is for values you need to borrow; Mutex is for threads.",
+   "tags": [],
+   "id": "q40199548",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "smart-pointers",
+   "level": 2,
+   "q": "What does `Weak<T>` give you?",
+   "choices": [
+    "A thread-safe view of an `Rc` that can be sent across threads",
+    "A reference that becomes `'static` once the strong count reaches zero",
+    "A handle that does not keep the value alive and must be upgraded to use",
+    "A handle that is faster than `Rc` because it skips the drop check"
+   ],
+   "answer": 2,
+   "why": "`Weak::upgrade()` returns `Option<Rc<T>>`: `Some` while a strong handle exists, `None` after the value was dropped. It is how you break Rc cycles.",
+   "tags": [],
+   "id": "q41601622",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "smart-pointers",
+   "level": 3,
+   "q": "A recursive `enum List { Cons(i32, List), Nil }` fails to compile. What fixes it, and why?",
+   "choices": [
+    "Derive `Copy` so each node can be duplicated into the next one",
+    "Add a lifetime parameter so the compiler knows the list outlives its nodes",
+    "Box the recursive field: the enum then has a known size because a pointer is fixed-width",
+    "Mark the enum `#[repr(C)]` so the compiler lays it out like a linked list"
+   ],
+   "answer": 2,
+   "why": "A type containing itself directly would be infinitely large. `Cons(i32, Box<List>)` stores the tail behind a pointer of fixed size.",
+   "tags": [],
+   "id": "q42375491",
+   "created": "2026-09-28T19:02:11"
+  },
+  {
+   "cat": "smart-pointers",
+   "level": 4,
+   "q": "`Rc<RefCell<T>>` shared between a GUI tree and its event handlers panics intermittently with 'already borrowed'. What is the most likely cause?",
+   "choices": [
+    "The `RefCell` was moved to another thread, where its borrow counters are not atomic and can race",
+    "`borrow()` was called through a `Weak` handle whose strong count had already dropped to zero",
+    "A handler calls `borrow_mut()` while a caller up the stack still holds a `borrow()` of the same cell",
+    "Two `Rc` handles were created from different allocations of the same value, so their counts disagree"
+   ],
+   "answer": 2,
+   "why": "Re-entrancy: an outer borrow is alive while an inner callback borrows mutably. Shorten borrow scopes, copy out the data, or restructure so handlers run after the outer borrow ends.",
+   "tags": [],
+   "id": "q43672012",
+   "created": "2026-09-28T19:02:11"
+  }
+ ],
+ "attempts": [
+  {
+   "qid": "q15196107",
+   "ts": "2026-09-29T07:13:33",
+   "picked": 0,
+   "correct": true,
+   "ms": 8426,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q10114590",
+   "ts": "2026-09-29T07:48:33",
+   "picked": 1,
+   "correct": true,
+   "ms": 7383,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q27505859",
+   "ts": "2026-09-29T14:34:34",
+   "picked": 0,
+   "correct": true,
+   "ms": 10736,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q00571091",
+   "ts": "2026-09-29T15:30:53",
+   "picked": 2,
+   "correct": true,
+   "ms": 13838,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q05754851",
+   "ts": "2026-09-29T15:33:23",
+   "picked": 0,
+   "correct": false,
+   "ms": 5236,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q33756483",
+   "ts": "2026-09-30T07:30:58",
+   "picked": 3,
+   "correct": false,
+   "ms": 13198,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q39634532",
+   "ts": "2026-09-30T09:14:06",
+   "picked": 2,
+   "correct": false,
+   "ms": 6216,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q32197394",
+   "ts": "2026-09-30T09:53:42",
+   "picked": 2,
+   "correct": true,
+   "ms": 4464,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q21608485",
+   "ts": "2026-09-30T13:30:56",
+   "picked": 1,
+   "correct": true,
+   "ms": 5424,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q00571091",
+   "ts": "2026-09-30T14:39:51",
+   "picked": 2,
+   "correct": true,
+   "ms": 5697,
+   "mode": "train"
+  },
+  {
+   "qid": "q20514003",
+   "ts": "2026-09-30T17:13:30",
+   "picked": 0,
+   "correct": true,
+   "ms": 12724,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q27505859",
+   "ts": "2026-09-30T18:28:51",
+   "picked": 0,
+   "correct": true,
+   "ms": 8226,
+   "mode": "train"
+  },
+  {
+   "qid": "q15196107",
+   "ts": "2026-09-30T19:47:51",
+   "picked": 0,
+   "correct": true,
+   "ms": 6214,
+   "mode": "train"
+  },
+  {
+   "qid": "q05754851",
+   "ts": "2026-09-30T22:16:12",
+   "picked": 1,
+   "correct": false,
+   "ms": 13846,
+   "mode": "train"
+  },
+  {
+   "qid": "q10114590",
+   "ts": "2026-09-30T22:22:46",
+   "picked": 1,
+   "correct": true,
+   "ms": 2974,
+   "mode": "train"
+  },
+  {
+   "qid": "q39634532",
+   "ts": "2026-10-01T09:46:10",
+   "picked": 0,
+   "correct": true,
+   "ms": 5285,
+   "mode": "train"
+  },
+  {
+   "qid": "q32197394",
+   "ts": "2026-10-01T11:01:00",
+   "picked": 2,
+   "correct": true,
+   "ms": 13144,
+   "mode": "train"
+  },
+  {
+   "qid": "q21608485",
+   "ts": "2026-10-01T11:27:55",
+   "picked": 1,
+   "correct": true,
+   "ms": 5691,
+   "mode": "train"
+  },
+  {
+   "qid": "q35115283",
+   "ts": "2026-10-01T11:34:09",
+   "picked": 2,
+   "correct": true,
+   "ms": 11077,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q20514003",
+   "ts": "2026-10-01T11:37:57",
+   "picked": 1,
+   "correct": false,
+   "ms": 10124,
+   "mode": "train"
+  },
+  {
+   "qid": "q38909599",
+   "ts": "2026-10-01T13:01:16",
+   "picked": 0,
+   "correct": true,
+   "ms": 5986,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q26007586",
+   "ts": "2026-10-01T14:48:37",
+   "picked": 0,
+   "correct": true,
+   "ms": 7841,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q05754851",
+   "ts": "2026-10-01T17:05:51",
+   "picked": 2,
+   "correct": true,
+   "ms": 8985,
+   "mode": "train"
+  },
+  {
+   "qid": "q22214215",
+   "ts": "2026-10-01T20:53:08",
+   "picked": 3,
+   "correct": true,
+   "ms": 3497,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q40199548",
+   "ts": "2026-10-01T21:42:37",
+   "picked": 2,
+   "correct": false,
+   "ms": 10966,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q33756483",
+   "ts": "2026-10-01T22:42:59",
+   "picked": 0,
+   "correct": false,
+   "ms": 8241,
+   "mode": "train"
+  },
+  {
+   "qid": "q38909599",
+   "ts": "2026-10-02T08:15:12",
+   "picked": 0,
+   "correct": true,
+   "ms": 7037,
+   "mode": "train"
+  },
+  {
+   "qid": "q22214215",
+   "ts": "2026-10-02T09:28:20",
+   "picked": 3,
+   "correct": true,
+   "ms": 12535,
+   "mode": "train"
+  },
+  {
+   "qid": "q26007586",
+   "ts": "2026-10-02T10:32:28",
+   "picked": 0,
+   "correct": true,
+   "ms": 11703,
+   "mode": "train"
+  },
+  {
+   "qid": "q20514003",
+   "ts": "2026-10-02T10:35:03",
+   "picked": 0,
+   "correct": true,
+   "ms": 7840,
+   "mode": "train"
+  },
+  {
+   "qid": "q28696954",
+   "ts": "2026-10-02T10:57:49",
+   "picked": 3,
+   "correct": true,
+   "ms": 5030,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q39634532",
+   "ts": "2026-10-02T11:11:09",
+   "picked": 0,
+   "correct": true,
+   "ms": 10257,
+   "mode": "train"
+  },
+  {
+   "qid": "q40199548",
+   "ts": "2026-10-02T13:44:17",
+   "picked": 3,
+   "correct": false,
+   "ms": 9911,
+   "mode": "train"
+  },
+  {
+   "qid": "q16958541",
+   "ts": "2026-10-02T14:27:04",
+   "picked": 0,
+   "correct": true,
+   "ms": 5984,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q11332398",
+   "ts": "2026-10-02T15:59:35",
+   "picked": 3,
+   "correct": true,
+   "ms": 5819,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q34635779",
+   "ts": "2026-10-02T20:07:25",
+   "picked": 0,
+   "correct": false,
+   "ms": 9743,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q05754851",
+   "ts": "2026-10-02T21:49:11",
+   "picked": 2,
+   "correct": true,
+   "ms": 12470,
+   "mode": "train"
+  },
+  {
+   "qid": "q29674933",
+   "ts": "2026-10-02T22:32:15",
+   "picked": 1,
+   "correct": true,
+   "ms": 13955,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q33756483",
+   "ts": "2026-10-02T22:50:49",
+   "picked": 2,
+   "correct": true,
+   "ms": 4238,
+   "mode": "train"
+  },
+  {
+   "qid": "q33756483",
+   "ts": "2026-10-04T07:24:21",
+   "picked": 2,
+   "correct": true,
+   "ms": 10977,
+   "mode": "train"
+  },
+  {
+   "qid": "q08916629",
+   "ts": "2026-10-04T07:40:05",
+   "picked": 2,
+   "correct": true,
+   "ms": 6768,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q32197394",
+   "ts": "2026-10-04T09:07:58",
+   "picked": 2,
+   "correct": true,
+   "ms": 6244,
+   "mode": "train"
+  },
+  {
+   "qid": "q21608485",
+   "ts": "2026-10-04T09:16:17",
+   "picked": 0,
+   "correct": false,
+   "ms": 3148,
+   "mode": "train"
+  },
+  {
+   "qid": "q15196107",
+   "ts": "2026-10-04T10:25:56",
+   "picked": 1,
+   "correct": false,
+   "ms": 10483,
+   "mode": "train"
+  },
+  {
+   "qid": "q01666179",
+   "ts": "2026-10-04T12:27:57",
+   "picked": 0,
+   "correct": true,
+   "ms": 3686,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q10114590",
+   "ts": "2026-10-04T14:10:45",
+   "picked": 1,
+   "correct": true,
+   "ms": 9570,
+   "mode": "train"
+  },
+  {
+   "qid": "q06316107",
+   "ts": "2026-10-04T15:25:09",
+   "picked": 2,
+   "correct": false,
+   "ms": 11291,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q41601622",
+   "ts": "2026-10-04T15:48:08",
+   "picked": 0,
+   "correct": false,
+   "ms": 9418,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q27505859",
+   "ts": "2026-10-04T17:26:12",
+   "picked": 2,
+   "correct": false,
+   "ms": 8342,
+   "mode": "train"
+  },
+  {
+   "qid": "q20514003",
+   "ts": "2026-10-04T18:01:21",
+   "picked": 0,
+   "correct": true,
+   "ms": 11577,
+   "mode": "train"
+  },
+  {
+   "qid": "q00571091",
+   "ts": "2026-10-04T18:09:16",
+   "picked": 2,
+   "correct": true,
+   "ms": 4748,
+   "mode": "train"
+  },
+  {
+   "qid": "q02279602",
+   "ts": "2026-10-04T22:44:20",
+   "picked": 1,
+   "correct": true,
+   "ms": 3965,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q26007586",
+   "ts": "2026-10-05T07:01:46",
+   "picked": 1,
+   "correct": false,
+   "ms": 10784,
+   "mode": "train"
+  },
+  {
+   "qid": "q23749229",
+   "ts": "2026-10-05T08:05:42",
+   "picked": 1,
+   "correct": true,
+   "ms": 8740,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q27505859",
+   "ts": "2026-10-05T08:33:45",
+   "picked": 0,
+   "correct": true,
+   "ms": 6406,
+   "mode": "train"
+  },
+  {
+   "qid": "q12180856",
+   "ts": "2026-10-05T09:40:47",
+   "picked": 0,
+   "correct": false,
+   "ms": 6687,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q37357404",
+   "ts": "2026-10-05T11:25:22",
+   "picked": 3,
+   "correct": true,
+   "ms": 3391,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q38909599",
+   "ts": "2026-10-05T12:17:22",
+   "picked": 0,
+   "correct": true,
+   "ms": 2797,
+   "mode": "train"
+  },
+  {
+   "qid": "q22214215",
+   "ts": "2026-10-05T13:32:30",
+   "picked": 3,
+   "correct": true,
+   "ms": 6525,
+   "mode": "train"
+  },
+  {
+   "qid": "q15196107",
+   "ts": "2026-10-05T14:04:16",
+   "picked": 0,
+   "correct": true,
+   "ms": 4493,
+   "mode": "train"
+  },
+  {
+   "qid": "q39634532",
+   "ts": "2026-10-05T15:03:11",
+   "picked": 1,
+   "correct": false,
+   "ms": 5805,
+   "mode": "train"
+  },
+  {
+   "qid": "q21608485",
+   "ts": "2026-10-05T16:33:48",
+   "picked": 1,
+   "correct": true,
+   "ms": 5872,
+   "mode": "train"
+  },
+  {
+   "qid": "q36142877",
+   "ts": "2026-10-05T16:44:13",
+   "picked": 2,
+   "correct": false,
+   "ms": 6261,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q05754851",
+   "ts": "2026-10-05T17:35:26",
+   "picked": 2,
+   "correct": true,
+   "ms": 6888,
+   "mode": "train"
+  },
+  {
+   "qid": "q30549755",
+   "ts": "2026-10-05T20:42:31",
+   "picked": 0,
+   "correct": false,
+   "ms": 11444,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q29674933",
+   "ts": "2026-10-06T07:19:19",
+   "picked": 1,
+   "correct": true,
+   "ms": 12816,
+   "mode": "train"
+  },
+  {
+   "qid": "q26007586",
+   "ts": "2026-10-06T07:21:24",
+   "picked": 0,
+   "correct": true,
+   "ms": 3874,
+   "mode": "train"
+  },
+  {
+   "qid": "q07944932",
+   "ts": "2026-10-06T07:52:43",
+   "picked": 3,
+   "correct": true,
+   "ms": 12069,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q21608485",
+   "ts": "2026-10-06T08:56:19",
+   "picked": 1,
+   "correct": true,
+   "ms": 6069,
+   "mode": "train"
+  },
+  {
+   "qid": "q35115283",
+   "ts": "2026-10-06T09:09:25",
+   "picked": 2,
+   "correct": true,
+   "ms": 12114,
+   "mode": "train"
+  },
+  {
+   "qid": "q42375491",
+   "ts": "2026-10-06T11:02:52",
+   "picked": 2,
+   "correct": true,
+   "ms": 10904,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q17965745",
+   "ts": "2026-10-06T11:42:57",
+   "picked": 1,
+   "correct": true,
+   "ms": 12274,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q03105780",
+   "ts": "2026-10-06T11:58:33",
+   "picked": 2,
+   "correct": true,
+   "ms": 10763,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q40199548",
+   "ts": "2026-10-06T13:15:32",
+   "picked": 0,
+   "correct": true,
+   "ms": 2581,
+   "mode": "train"
+  },
+  {
+   "qid": "q39634532",
+   "ts": "2026-10-06T15:23:21",
+   "picked": 0,
+   "correct": true,
+   "ms": 11463,
+   "mode": "train"
+  },
+  {
+   "qid": "q15196107",
+   "ts": "2026-10-06T16:38:15",
+   "picked": 0,
+   "correct": true,
+   "ms": 13848,
+   "mode": "train"
+  },
+  {
+   "qid": "q18021021",
+   "ts": "2026-10-06T17:46:31",
+   "picked": 1,
+   "correct": true,
+   "ms": 4948,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q27505859",
+   "ts": "2026-10-06T21:11:10",
+   "picked": 0,
+   "correct": true,
+   "ms": 6907,
+   "mode": "train"
+  },
+  {
+   "qid": "q33756483",
+   "ts": "2026-10-07T07:40:34",
+   "picked": 2,
+   "correct": true,
+   "ms": 13652,
+   "mode": "train"
+  },
+  {
+   "qid": "q24110590",
+   "ts": "2026-10-07T08:39:40",
+   "picked": 1,
+   "correct": true,
+   "ms": 13031,
+   "mode": "quiz"
+  },
+  {
+   "qid": "q40199548",
+   "ts": "2026-10-07T09:42:33",
+   "picked": 0,
+   "correct": true,
+   "ms": 3582,
+   "mode": "train"
+  },
+  {
+   "qid": "q34635779",
+   "ts": "2026-10-07T13:14:47",
+   "picked": 0,
+   "correct": false,
+   "ms": 13148,
+   "mode": "train"
+  },
+  {
+   "qid": "q39634532",
+   "ts": "2026-10-07T14:05:01",
+   "picked": 0,
+   "correct": true,
+   "ms": 3185,
+   "mode": "train"
+  },
+  {
+   "qid": "q26007586",
+   "ts": "2026-10-07T15:00:29",
+   "picked": 0,
+   "correct": true,
+   "ms": 3648,
+   "mode": "train"
+  },
+  {
+   "qid": "q20514003",
+   "ts": "2026-10-07T18:06:24",
+   "picked": 0,
+   "correct": true,
+   "ms": 9895,
+   "mode": "train"
+  },
+  {
+   "qid": "q16958541",
+   "ts": "2026-10-07T19:04:30",
+   "picked": 2,
+   "correct": false,
+   "ms": 13701,
+   "mode": "train"
+  },
+  {
+   "qid": "q11332398",
+   "ts": "2026-10-07T22:16:51",
+   "picked": 3,
+   "correct": true,
+   "ms": 3719,
+   "mode": "train"
+  },
+  {
+   "qid": "q21608485",
+   "ts": "2026-10-09T08:31:17",
+   "picked": 1,
+   "correct": true,
+   "ms": 13510,
+   "mode": "train"
+  },
+  {
+   "qid": "q15196107",
+   "ts": "2026-10-09T11:21:16",
+   "picked": 0,
+   "correct": true,
+   "ms": 13174,
+   "mode": "train"
+  },
+  {
+   "qid": "q34635779",
+   "ts": "2026-10-09T13:19:05",
+   "picked": 2,
+   "correct": true,
+   "ms": 10248,
+   "mode": "train"
+  },
+  {
+   "qid": "q35115283",
+   "ts": "2026-10-09T13:43:31",
+   "picked": 2,
+   "correct": true,
+   "ms": 7265,
+   "mode": "train"
+  },
+  {
+   "qid": "q28696954",
+   "ts": "2026-10-09T15:24:13",
+   "picked": 1,
+   "correct": false,
+   "ms": 5952,
+   "mode": "train"
+  },
+  {
+   "qid": "q29674933",
+   "ts": "2026-10-09T16:29:29",
+   "picked": 1,
+   "correct": true,
+   "ms": 10140,
+   "mode": "train"
+  },
+  {
+   "qid": "q27505859",
+   "ts": "2026-10-09T16:39:36",
+   "picked": 0,
+   "correct": true,
+   "ms": 4686,
+   "mode": "train"
+  },
+  {
+   "qid": "q16958541",
+   "ts": "2026-10-09T21:04:52",
+   "picked": 0,
+   "correct": true,
+   "ms": 10800,
+   "mode": "train"
+  },
+  {
+   "qid": "q39634532",
+   "ts": "2026-10-10T09:09:47",
+   "picked": 0,
+   "correct": true,
+   "ms": 11086,
+   "mode": "train"
+  },
+  {
+   "qid": "q40199548",
+   "ts": "2026-10-10T10:45:23",
+   "picked": 0,
+   "correct": true,
+   "ms": 6290,
+   "mode": "train"
+  },
+  {
+   "qid": "q41601622",
+   "ts": "2026-10-10T10:59:12",
+   "picked": 2,
+   "correct": true,
+   "ms": 2692,
+   "mode": "train"
+  },
+  {
+   "qid": "q16958541",
+   "ts": "2026-10-10T11:26:22",
+   "picked": 0,
+   "correct": true,
+   "ms": 8662,
+   "mode": "train"
+  },
+  {
+   "qid": "q28696954",
+   "ts": "2026-10-10T17:00:20",
+   "picked": 3,
+   "correct": true,
+   "ms": 8042,
+   "mode": "train"
+  },
+  {
+   "qid": "q26007586",
+   "ts": "2026-10-10T18:08:38",
+   "picked": 0,
+   "correct": true,
+   "ms": 12849,
+   "mode": "train"
+  },
+  {
+   "qid": "q11332398",
+   "ts": "2026-10-10T22:25:01",
+   "picked": 3,
+   "correct": true,
+   "ms": 5106,
+   "mode": "train"
+  },
+  {
+   "qid": "q34635779",
+   "ts": "2026-10-10T22:43:28",
+   "picked": 2,
+   "correct": true,
+   "ms": 9142,
+   "mode": "train"
+  },
+  {
+   "qid": "q06316107",
+   "ts": "2026-10-11T08:17:06",
+   "picked": 3,
+   "correct": true,
+   "ms": 3345,
+   "mode": "train"
+  },
+  {
+   "qid": "q36142877",
+   "ts": "2026-10-11T09:03:59",
+   "picked": 0,
+   "correct": true,
+   "ms": 9231,
+   "mode": "train"
+  },
+  {
+   "qid": "q41601622",
+   "ts": "2026-10-11T09:23:59",
+   "picked": 2,
+   "correct": true,
+   "ms": 9513,
+   "mode": "train"
+  },
+  {
+   "qid": "q01666179",
+   "ts": "2026-10-11T15:27:32",
+   "picked": 0,
+   "correct": true,
+   "ms": 7670,
+   "mode": "train"
+  },
+  {
+   "qid": "q28696954",
+   "ts": "2026-10-11T16:16:23",
+   "picked": 3,
+   "correct": true,
+   "ms": 3564,
+   "mode": "train"
+  },
+  {
+   "qid": "q02279602",
+   "ts": "2026-10-11T16:40:59",
+   "picked": 1,
+   "correct": true,
+   "ms": 4939,
+   "mode": "train"
+  },
+  {
+   "qid": "q08916629",
+   "ts": "2026-10-11T18:50:27",
+   "picked": 2,
+   "correct": true,
+   "ms": 2975,
+   "mode": "train"
+  },
+  {
+   "qid": "q30549755",
+   "ts": "2026-10-11T19:58:56",
+   "picked": 3,
+   "correct": true,
+   "ms": 11579,
+   "mode": "train"
+  },
+  {
+   "qid": "q06316107",
+   "ts": "2026-10-12T10:10:41",
+   "picked": 3,
+   "correct": true,
+   "ms": 5148,
+   "mode": "train"
+  },
+  {
+   "qid": "q10114590",
+   "ts": "2026-10-12T11:10:30",
+   "picked": 1,
+   "correct": true,
+   "ms": 9297,
+   "mode": "train"
+  },
+  {
+   "qid": "q00571091",
+   "ts": "2026-10-12T11:41:55",
+   "picked": 2,
+   "correct": true,
+   "ms": 7189,
+   "mode": "train"
+  },
+  {
+   "qid": "q37357404",
+   "ts": "2026-10-12T12:21:35",
+   "picked": 3,
+   "correct": true,
+   "ms": 3992,
+   "mode": "train"
+  },
+  {
+   "qid": "q32197394",
+   "ts": "2026-10-12T14:19:30",
+   "picked": 2,
+   "correct": true,
+   "ms": 11631,
+   "mode": "train"
+  },
+  {
+   "qid": "q05754851",
+   "ts": "2026-10-12T16:16:47",
+   "picked": 2,
+   "correct": true,
+   "ms": 13195,
+   "mode": "train"
+  },
+  {
+   "qid": "q36142877",
+   "ts": "2026-10-12T20:08:35",
+   "picked": 2,
+   "correct": false,
+   "ms": 5652,
+   "mode": "train"
+  },
+  {
+   "qid": "q30549755",
+   "ts": "2026-10-12T22:35:14",
+   "picked": 3,
+   "correct": true,
+   "ms": 9921,
+   "mode": "train"
+  },
+  {
+   "qid": "q02279602",
+   "ts": "2026-10-14T07:04:25",
+   "picked": 2,
+   "correct": false,
+   "ms": 11148,
+   "mode": "train"
+  },
+  {
+   "qid": "q38909599",
+   "ts": "2026-10-14T07:47:55",
+   "picked": 0,
+   "correct": true,
+   "ms": 9263,
+   "mode": "train"
+  },
+  {
+   "qid": "q16958541",
+   "ts": "2026-10-14T13:05:17",
+   "picked": 0,
+   "correct": true,
+   "ms": 6570,
+   "mode": "train"
+  },
+  {
+   "qid": "q22214215",
+   "ts": "2026-10-14T13:24:17",
+   "picked": 3,
+   "correct": true,
+   "ms": 8041,
+   "mode": "train"
+  },
+  {
+   "qid": "q33756483",
+   "ts": "2026-10-14T18:16:51",
+   "picked": 2,
+   "correct": true,
+   "ms": 11832,
+   "mode": "train"
+  },
+  {
+   "qid": "q41601622",
+   "ts": "2026-10-14T20:45:48",
+   "picked": 2,
+   "correct": true,
+   "ms": 10254,
+   "mode": "train"
+  },
+  {
+   "qid": "q28696954",
+   "ts": "2026-10-14T21:27:19",
+   "picked": 3,
+   "correct": true,
+   "ms": 2857,
+   "mode": "train"
+  },
+  {
+   "qid": "q34635779",
+   "ts": "2026-10-14T22:17:36",
+   "picked": 2,
+   "correct": true,
+   "ms": 8400,
+   "mode": "train"
+  },
+  {
+   "qid": "q01666179",
+   "ts": "2026-10-15T11:14:36",
+   "picked": 0,
+   "correct": true,
+   "ms": 3115,
+   "mode": "train"
+  },
+  {
+   "qid": "q06316107",
+   "ts": "2026-10-15T11:33:43",
+   "picked": 3,
+   "correct": true,
+   "ms": 4284,
+   "mode": "train"
+  },
+  {
+   "qid": "q37357404",
+   "ts": "2026-10-15T14:50:38",
+   "picked": 3,
+   "correct": true,
+   "ms": 2518,
+   "mode": "train"
+  },
+  {
+   "qid": "q08916629",
+   "ts": "2026-10-15T16:08:40",
+   "picked": 2,
+   "correct": true,
+   "ms": 6625,
+   "mode": "train"
+  },
+  {
+   "qid": "q36142877",
+   "ts": "2026-10-15T16:33:37",
+   "picked": 0,
+   "correct": true,
+   "ms": 5640,
+   "mode": "train"
+  },
+  {
+   "qid": "q30549755",
+   "ts": "2026-10-15T20:44:48",
+   "picked": 3,
+   "correct": true,
+   "ms": 4337,
+   "mode": "train"
+  },
+  {
+   "qid": "q02279602",
+   "ts": "2026-10-15T21:05:35",
+   "picked": 1,
+   "correct": true,
+   "ms": 3147,
+   "mode": "train"
+  },
+  {
+   "qid": "q20514003",
+   "ts": "2026-10-15T21:15:50",
+   "picked": 0,
+   "correct": true,
+   "ms": 4286,
+   "mode": "train"
+  },
+  {
+   "qid": "q23749229",
+   "ts": "2026-10-16T07:12:31",
+   "picked": 1,
+   "correct": true,
+   "ms": 13550,
+   "mode": "train"
+  },
+  {
+   "qid": "q12180856",
+   "ts": "2026-10-16T07:26:45",
+   "picked": 2,
+   "correct": true,
+   "ms": 13143,
+   "mode": "train"
+  },
+  {
+   "qid": "q17965745",
+   "ts": "2026-10-16T09:16:14",
+   "picked": 1,
+   "correct": true,
+   "ms": 13433,
+   "mode": "train"
+  },
+  {
+   "qid": "q36142877",
+   "ts": "2026-10-16T14:30:33",
+   "picked": 0,
+   "correct": true,
+   "ms": 6346,
+   "mode": "train"
+  },
+  {
+   "qid": "q02279602",
+   "ts": "2026-10-16T16:29:17",
+   "picked": 1,
+   "correct": true,
+   "ms": 7683,
+   "mode": "train"
+  },
+  {
+   "qid": "q03105780",
+   "ts": "2026-10-16T16:47:54",
+   "picked": 2,
+   "correct": true,
+   "ms": 10771,
+   "mode": "train"
+  },
+  {
+   "qid": "q18021021",
+   "ts": "2026-10-16T18:14:31",
+   "picked": 1,
+   "correct": true,
+   "ms": 3058,
+   "mode": "train"
+  },
+  {
+   "qid": "q42375491",
+   "ts": "2026-10-16T20:23:43",
+   "picked": 2,
+   "correct": true,
+   "ms": 8993,
+   "mode": "train"
+  },
+  {
+   "qid": "q26007586",
+   "ts": "2026-10-18T07:38:09",
+   "picked": 0,
+   "correct": true,
+   "ms": 9305,
+   "mode": "train"
+  },
+  {
+   "qid": "q40199548",
+   "ts": "2026-10-18T08:11:25",
+   "picked": 0,
+   "correct": true,
+   "ms": 9866,
+   "mode": "train"
+  },
+  {
+   "qid": "q21608485",
+   "ts": "2026-10-18T08:38:09",
+   "picked": 1,
+   "correct": true,
+   "ms": 8946,
+   "mode": "train"
+  },
+  {
+   "qid": "q27505859",
+   "ts": "2026-10-18T14:16:48",
+   "picked": 0,
+   "correct": true,
+   "ms": 7332,
+   "mode": "train"
+  },
+  {
+   "qid": "q29674933",
+   "ts": "2026-10-18T17:12:11",
+   "picked": 1,
+   "correct": true,
+   "ms": 13190,
+   "mode": "train"
+  },
+  {
+   "qid": "q35115283",
+   "ts": "2026-10-18T17:46:07",
+   "picked": 2,
+   "correct": true,
+   "ms": 3800,
+   "mode": "train"
+  },
+  {
+   "qid": "q15196107",
+   "ts": "2026-10-18T22:12:19",
+   "picked": 0,
+   "correct": true,
+   "ms": 5677,
+   "mode": "train"
+  },
+  {
+   "qid": "q39634532",
+   "ts": "2026-10-18T22:39:11",
+   "picked": 0,
+   "correct": true,
+   "ms": 6158,
+   "mode": "train"
+  },
+  {
+   "qid": "q36142877",
+   "ts": "2026-10-19T09:17:05",
+   "picked": 0,
+   "correct": true,
+   "ms": 8258,
+   "mode": "train"
+  },
+  {
+   "qid": "q12180856",
+   "ts": "2026-10-19T10:35:48",
+   "picked": 2,
+   "correct": true,
+   "ms": 5898,
+   "mode": "train"
+  },
+  {
+   "qid": "q18021021",
+   "ts": "2026-10-19T13:20:23",
+   "picked": 1,
+   "correct": true,
+   "ms": 10274,
+   "mode": "train"
+  },
+  {
+   "qid": "q23749229",
+   "ts": "2026-10-19T16:52:51",
+   "picked": 1,
+   "correct": true,
+   "ms": 9585,
+   "mode": "train"
+  },
+  {
+   "qid": "q02279602",
+   "ts": "2026-10-19T18:21:28",
+   "picked": 1,
+   "correct": true,
+   "ms": 5273,
+   "mode": "train"
+  },
+  {
+   "qid": "q42375491",
+   "ts": "2026-10-19T20:15:51",
+   "picked": 2,
+   "correct": true,
+   "ms": 12746,
+   "mode": "train"
+  },
+  {
+   "qid": "q11332398",
+   "ts": "2026-10-19T21:02:19",
+   "picked": 3,
+   "correct": true,
+   "ms": 13386,
+   "mode": "train"
+  },
+  {
+   "qid": "q17965745",
+   "ts": "2026-10-19T22:12:23",
+   "picked": 1,
+   "correct": true,
+   "ms": 11372,
+   "mode": "train"
+  }
+ ],
+ "srs": {
+  "q00571091": {
+   "ease": 2.9000000000000004,
+   "interval": 22,
+   "due": "2026-11-03",
+   "reps": 4,
+   "lapses": 0
+  },
+  "q15196107": {
+   "ease": 2.9000000000000004,
+   "interval": 22,
+   "due": "2026-11-09",
+   "reps": 4,
+   "lapses": 1
+  },
+  "q10114590": {
+   "ease": 2.9000000000000004,
+   "interval": 22,
+   "due": "2026-11-03",
+   "reps": 4,
+   "lapses": 0
+  },
+  "q05754851": {
+   "ease": 2.5,
+   "interval": 17,
+   "due": "2026-10-29",
+   "reps": 4,
+   "lapses": 2
+  },
+  "q27505859": {
+   "ease": 2.9000000000000004,
+   "interval": 22,
+   "due": "2026-11-09",
+   "reps": 4,
+   "lapses": 1
+  },
+  "q39634532": {
+   "ease": 2.7,
+   "interval": 21,
+   "due": "2026-11-08",
+   "reps": 4,
+   "lapses": 2
+  },
+  "q20514003": {
+   "ease": 2.8000000000000003,
+   "interval": 22,
+   "due": "2026-11-06",
+   "reps": 4,
+   "lapses": 1
+  },
+  "q33756483": {
+   "ease": 2.5,
+   "interval": 17,
+   "due": "2026-10-31",
+   "reps": 4,
+   "lapses": 2
+  },
+  "q32197394": {
+   "ease": 2.9000000000000004,
+   "interval": 22,
+   "due": "2026-11-03",
+   "reps": 4,
+   "lapses": 0
+  },
+  "q21608485": {
+   "ease": 2.9000000000000004,
+   "interval": 22,
+   "due": "2026-11-09",
+   "reps": 4,
+   "lapses": 1
+  },
+  "q38909599": {
+   "ease": 2.9000000000000004,
+   "interval": 22,
+   "due": "2026-11-05",
+   "reps": 4,
+   "lapses": 0
+  },
+  "q26007586": {
+   "ease": 2.9000000000000004,
+   "interval": 22,
+   "due": "2026-11-09",
+   "reps": 4,
+   "lapses": 1
+  },
+  "q22214215": {
+   "ease": 2.9000000000000004,
+   "interval": 22,
+   "due": "2026-11-05",
+   "reps": 4,
+   "lapses": 0
+  },
+  "q40199548": {
+   "ease": 2.5,
+   "interval": 17,
+   "due": "2026-11-04",
+   "reps": 4,
+   "lapses": 2
+  },
+  "q35115283": {
+   "ease": 2.9000000000000004,
+   "interval": 22,
+   "due": "2026-11-09",
+   "reps": 4,
+   "lapses": 0
+  },
+  "q29674933": {
+   "ease": 2.9000000000000004,
+   "interval": 22,
+   "due": "2026-11-09",
+   "reps": 4,
+   "lapses": 0
+  },
+  "q11332398": {
+   "ease": 2.9000000000000004,
+   "interval": 22,
+   "due": "2026-11-10",
+   "reps": 4,
+   "lapses": 0
+  },
+  "q34635779": {
+   "ease": 2.4,
+   "interval": 7,
+   "due": "2026-10-21",
+   "reps": 3,
+   "lapses": 2
+  },
+  "q16958541": {
+   "ease": 2.7,
+   "interval": 8,
+   "due": "2026-10-22",
+   "reps": 3,
+   "lapses": 1
+  },
+  "q28696954": {
+   "ease": 2.7,
+   "interval": 8,
+   "due": "2026-10-22",
+   "reps": 3,
+   "lapses": 1
+  },
+  "q41601622": {
+   "ease": 2.6,
+   "interval": 8,
+   "due": "2026-10-22",
+   "reps": 3,
+   "lapses": 1
+  },
+  "q06316107": {
+   "ease": 2.6,
+   "interval": 8,
+   "due": "2026-10-23",
+   "reps": 3,
+   "lapses": 1
+  },
+  "q02279602": {
+   "ease": 2.8000000000000003,
+   "interval": 8,
+   "due": "2026-10-27",
+   "reps": 3,
+   "lapses": 1
+  },
+  "q01666179": {
+   "ease": 2.8000000000000003,
+   "interval": 8,
+   "due": "2026-10-23",
+   "reps": 3,
+   "lapses": 0
+  },
+  "q08916629": {
+   "ease": 2.8000000000000003,
+   "interval": 8,
+   "due": "2026-10-23",
+   "reps": 3,
+   "lapses": 0
+  },
+  "q30549755": {
+   "ease": 2.6,
+   "interval": 8,
+   "due": "2026-10-23",
+   "reps": 3,
+   "lapses": 1
+  },
+  "q36142877": {
+   "ease": 2.5,
+   "interval": 7,
+   "due": "2026-10-26",
+   "reps": 3,
+   "lapses": 2
+  },
+  "q37357404": {
+   "ease": 2.8000000000000003,
+   "interval": 8,
+   "due": "2026-10-23",
+   "reps": 3,
+   "lapses": 0
+  },
+  "q12180856": {
+   "ease": 2.5,
+   "interval": 3,
+   "due": "2026-10-22",
+   "reps": 2,
+   "lapses": 1
+  },
+  "q23749229": {
+   "ease": 2.8000000000000003,
+   "interval": 8,
+   "due": "2026-10-27",
+   "reps": 3,
+   "lapses": 0
+  },
+  "q17965745": {
+   "ease": 2.8000000000000003,
+   "interval": 8,
+   "due": "2026-10-27",
+   "reps": 3,
+   "lapses": 0
+  },
+  "q18021021": {
+   "ease": 2.8000000000000003,
+   "interval": 8,
+   "due": "2026-10-27",
+   "reps": 3,
+   "lapses": 0
+  },
+  "q42375491": {
+   "ease": 2.8000000000000003,
+   "interval": 8,
+   "due": "2026-10-27",
+   "reps": 3,
+   "lapses": 0
+  },
+  "q03105780": {
+   "ease": 2.7,
+   "interval": 3,
+   "due": "2026-10-19",
+   "reps": 2,
+   "lapses": 0
+  },
+  "q07944932": {
+   "ease": 2.6,
+   "interval": 1,
+   "due": "2026-10-07",
+   "reps": 1,
+   "lapses": 0
+  },
+  "q24110590": {
+   "ease": 2.6,
+   "interval": 1,
+   "due": "2026-10-08",
+   "reps": 1,
+   "lapses": 0
+  }
+ },
+ "plan": {
+  "generated": "2026-10-14T20:14:07",
+  "diagnosis": "Your misses cluster on lifetimes and on borrowing questions where a reference is returned or stored. In every case you reasoned about where the value lives instead of how long the borrow is used, so you accept code the checker rejects and reject code it accepts.",
+  "root_causes": [
+   "You treat a borrow as ending at the closing brace rather than at its last use",
+   "You read a lifetime parameter as 'how long the data lives' instead of 'a relation the output must satisfy'"
+  ],
+  "protocol": [
+   {
+    "step": "Predict the borrow-checker verdict on 10 snippets before compiling",
+    "how": "rustlings move_semantics and lifetimes exercises; write your prediction in a comment first",
+    "when": "today, 25 min"
+   },
+   {
+    "step": "Explain NLL aloud with one example where the brace and the last use differ",
+    "how": "record a 2-minute voice memo, then listen back",
+    "when": "tomorrow"
+   },
+   {
+    "step": "Rewrite `longest` three ways: shared lifetime, two lifetimes, and returning an owned String",
+    "how": "in a scratch crate, and note which calls each version accepts",
+    "when": "this week, 20 min"
+   },
+   {
+    "step": "Draw the Parser<'a> example: boxes for the text, the parser and the returned slice, with arrows for the borrows",
+    "how": "paper",
+    "when": "this week"
+   }
+  ],
+  "next_test": "After the protocol, re-run Go deeper on borrowing and lifetimes at L3–L4."
+ }
+}

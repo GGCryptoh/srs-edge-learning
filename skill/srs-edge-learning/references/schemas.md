@@ -4,12 +4,13 @@ The page writes a request; `learn.py pending` prints it with a `context` block; 
 
 ## Request (what `pending` prints)
 ```json
-{"id":"20261007-141502-a1b2","ts":"…","topic":"rust-ownership","type":"questions","params":{"cats":["borrowing","lifetimes"],"levels":[2,3],"n":10},"note":"auto: bank running low","status":"pending",
+{"id":"20261007-141502-a1b2","ts":"…","topic":"rust-ownership","type":"questions","params":{"cats":["borrowing","lifetimes"],"levels":[2,3],"n":10},"note":"auto: bank running low","status":"claimed","claimed":{"by":"<host>-<pid>","ts":"…"},   // pending → claimed (printed by `pending`) → done; the page may set cancelled
  "context":{"name":"Rust ownership","goal":"pass a systems interview","level_hint":2,
    "categories":[{"id":"borrowing","name":"Borrowing & references","why":"…"}],
    "edge":{"borrowing":{"edge":2,"next":3,"answered":9,"accuracy":0.67,"by_level":{"2":{"right":6,"n":7},"3":{"right":0,"n":2}}}},
    "unanswered":{"borrowing":{"3":1}},
-   "existing_questions":["…"],          // questions only
+   "existing_questions":["…"],          // questions only (includes retired ones, so you do not rewrite them)
+   "flagged":[{"q":"…","cat":"…","level":3,"answer":"…","reason":"The marked answer is wrong: …","ts":"…"}],   // questions only, when the learner retired some
    "misses":[{"cat":"…","level":3,"q":"…","picked":"…","answer":"…","ts":"…"}]   // diagnose only
  }}
 ```
@@ -67,6 +68,9 @@ Rules the validator enforces: exactly 4 distinct choices, `answer` 0–3, `why` 
  ],   // 3–7 steps, each doable away from the page
  "next_test":"After the protocol, re-run Go deeper on borrowing and lifetimes at L3–L4."}
 ```
+
+## Stored question (what `topic.json` holds after merge)
+Each merged question gains `id`, `created`, shuffled `choices` with `answer` remapped, and optionally `retired: {"ts": "…", "reason": "…"}` once the learner flags it from the page (or `learn.py retire`). Retired questions are excluded from the bank, the edge maths, `due` and `misses`, but stay on file so they can be restored and so the agent sees them in `existing_questions` and `flagged`.
 
 ## Level ladder (what L1–L5 mean when writing questions)
 | L | name | a question at this level asks for |

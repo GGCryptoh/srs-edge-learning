@@ -2,7 +2,7 @@
 
 # SRS Edge Learning
 
-![version](https://img.shields.io/badge/version-0.1.0-blue) ![license](https://img.shields.io/badge/license-MIT-green) ![python](https://img.shields.io/badge/python-3.9%2B-informational) ![agents](https://img.shields.io/badge/agents-Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Copilot%20CLI-6f42c1)
+![version](https://img.shields.io/badge/version-0.2.0-blue) ![license](https://img.shields.io/badge/license-MIT-green) ![python](https://img.shields.io/badge/python-3.9%2B-informational) ![agents](https://img.shields.io/badge/agents-Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Copilot%20CLI-6f42c1)
 
 SRS Edge Learning — get smart at any topic by finding the edge of what you know and pushing it outward. Spins up a local hub (127.0.0.1:4848) that remembers every topic; for a new topic it writes a curated brief (cliff notes or short bullets — what it is, how it applies in business and life, the movers, recent news), then maps the topic into categories, drills you with timed multiple-choice questions that get harder until it finds your edge, diagnoses your misses into a training protocol, and schedules spaced-repetition reviews so you get smarter over time. The agent is the backend (no API key), so it runs in Claude Code, Codex and Copilot CLI alike.
 
@@ -44,6 +44,13 @@ A skill for AI coding agents (Claude Code, Codex, GitHub Copilot CLI) plus a sma
 
 Run the skill again next week and it opens the same page with every topic, your edge per category, a day streak, and what's due for review.
 
+## Living with it
+- **Progress you can see.** Each topic charts your edge over time (overall and per category), a 7-day rolling accuracy, how well reviews stick, and a 16-week activity heatmap. The home page has the heatmap across all topics.
+- **Flag a bad question.** If the marked answer is wrong or two choices are right, press *flag this question* (or `f`) on the result card. It leaves the bank, your edge maths and the review deck; the agent is told why and writes a replacement. Restore it from Progress if you change your mind.
+- **Rename, archive, delete.** The ⋯ menu on any topic. Archived topics drop out of the way but keep everything; deleted ones go to a trash folder with an Undo.
+- **Backup and move machines.** ⚙ → *Download backup* gives you one zip with every topic and your settings. *Restore from file* on the other machine brings it all back, or imports a single topic someone exported. From a terminal: `learn.py backup`, `learn.py restore file.zip`.
+- **Plays well with others.** If port 4848 is busy the hub takes the next free one and tells you. Two agents can serve the same hub: each request is claimed once, and every write is locked.
+
 ## Why it works
 - **Production, not consumption.** Every minute on the page is you answering, not reading.
 - **Zone of proximal development.** Questions are pitched at your measured edge plus one level, so they're always just out of reach.
@@ -66,6 +73,7 @@ Run the skill again next week and it opens the same page with every topic, your 
 ## Honest limits
 - Multiple choice only. That keeps the timer fair and the edge maths honest, but it won't grade an essay. The training protocol is where the free-form work lives.
 - The agent writes questions in batches of 10–12. When the bank runs low mid-round the page asks for more and you wait a minute.
+- The agent can write a wrong answer key. The validator catches structure and length tells, not facts; that is what the flag button is for.
 - News and "movers" are only as fresh as your agent's web access. The brief states the date and whether the web was checked.
 - Everything stays on your machine in one folder. Nothing is uploaded.
 

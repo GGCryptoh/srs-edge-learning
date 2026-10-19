@@ -6,4 +6,9 @@
 python3 scripts/learn.py validate examples/sample-questions.json --type questions
 ```
 
-`sample-brief.json` is a valid `bullets` brief. A full topic file after a few rounds looks like `sample-topic.json` (brief, categories, questions, attempts, srs, plan).
+`sample-brief.json` is a valid `bullets` brief. `sample-topic.json` is a full topic file after three weeks of use (brief, 4 categories, 44 questions, 159 attempts, SRS cards, a protocol). Load it into a hub to see every screen with data:
+
+```
+python3 scripts/learn.py restore examples/sample-topic.json
+python3 scripts/learn.py open rust-ownership
+```
