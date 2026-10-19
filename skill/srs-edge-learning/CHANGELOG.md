@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- Stronger length-tell guard on question batches. Per question the validator now rejects a right answer that is the longest **or shortest** by far (no 40-char floor any more), and a right answer flanked by two stub distractors (one matching distractor was enough before). Per batch it rejects the right answer being the strictly longest or shortest option in more than 45% of questions (was 60%, longest only) and a mean right/distractor length ratio outside 0.8–1.2. `validate` and `fulfil` print a length report. `examples/sample-questions.json` rewritten so its distractors match the right answer's length (it failed the old check).
+
 ## 0.1.0 — 2026-10-07
 - First release. `learn.py` (stdlib): `setup`, `open` (detached hub on 127.0.0.1:4848), `serve`, `add`, `topics`, `status`, `pending --wait`, `fulfil`, `validate`, `misses`, `due`, `export`.
 - `assets/app.html`: topics home with new-topic wizard (goal, starting level, cliff / bullets / go deeper); per-topic tabs Brief · Go deeper (adaptive timed quiz: read phase, then four choices with countdown, instant result + why, keyboard 1–4/space) · Train (SRS, SM-2 lite) · Progress (edge per category, level bars, activity, diagnose button) · Protocol (diagnosis, root causes, checklist).

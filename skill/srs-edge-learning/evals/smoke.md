@@ -11,7 +11,7 @@ Expect:
 Prompt: (user clicks **Build the map**, then **Start a round**)
 Expect:
 - `categories` fulfilled with 4–12 kebab-case ids and `why` lines, ordered foundations → advanced.
-- `questions` fulfilled with `params.n` items at `params.levels`, every `cat` a valid id, four distinct choices, `why` present; `fulfil` printed `N merged`.
+- `questions` fulfilled with `params.n` items at `params.levels`, every `cat` a valid id, four distinct choices, `why` present; `fulfil` printed `N merged` and a length report with the mean ratio between 0.8 and 1.2 and the right answer longest in no more than 45% of questions.
 - During the round the agent writes nothing in chat; when the page auto-files "bank running low", the agent fulfils it without being asked.
 
 ## 3. Diagnose

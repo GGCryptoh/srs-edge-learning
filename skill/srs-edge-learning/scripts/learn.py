@@ -132,6 +132,33 @@ def summary(t):
             "overall_edge": round(sum(v["edge"] for v in e.values()) / len(e), 1) if e else 0}
 
 # ---------- validation + merge
+def length_tells(q):
+    """Length tells in one question's choices. Returns (errors, stats); stats is (right is strictly longest, right is strictly shortest, right length / mean distractor length) or None when the question is malformed.
+    A learner who cannot answer picks the longest, most detailed option (or, once they know that trick is being countered, the shortest). The checks are symmetric and ignore tiny absolute gaps so short factual choices (numbers, names) are not flagged."""
+    ch = q.get("choices") or []; a = q.get("answer")
+    if len(ch) != 4 or not isinstance(a, int) or not 0 <= a < 4: return [], None
+    L = [len(str(c).strip()) for c in ch]; r = L[a]; d = sorted(L[i] for i in range(4) if i != a); errs = []
+    if r > 1.3 * d[-1] and r - d[-1] > 12: errs.append(f"the right answer is the longest by far ({r} chars; longest distractor {d[-1]}); write every distractor within ~30% of its length and as specific")
+    elif r >= 30 and d[1] < 0.65 * r: errs.append(f"two distractors are far shorter than the right answer ({r} chars vs {d[0]}, {d[1]}, {d[2]}); the learner drops them and coin-flips, so all three must match its length and detail")
+    if r < 0.6 * d[0] and d[0] - r > 12: errs.append(f"the right answer is the shortest by far ({r} chars; shortest distractor {d[0]}); give it the same detail as the distractors or trim them")
+    return errs, (r > d[-1], r < d[0], r / (sum(d) / 3))
+
+def batch_length_tells(qs):
+    """Batch-level length tells: even when no single question trips length_tells, 'the longest one is right' can still pay off across a round."""
+    st = [s for s in (length_tells(q)[1] for q in qs) if s]; n = len(st); errs = []
+    if n < 6: return errs
+    lo = sum(1 for s in st if s[0]); sh = sum(1 for s in st if s[1]); ratio = sum(s[2] for s in st) / n
+    if lo > 0.45 * n: errs.append(f"the right answer is the longest option in {lo}/{n} questions (chance would be about {n // 4}); lengthen distractors or trim the right answer in some of them")
+    if sh > 0.45 * n: errs.append(f"the right answer is the shortest option in {sh}/{n} questions (chance would be about {n // 4}); balance the lengths")
+    if ratio > 1.2: errs.append(f"across the batch the right answer averages {ratio:.2f}x the length of its distractors; aim for about 1.0")
+    if ratio < 0.8: errs.append(f"across the batch the right answer averages {ratio:.2f}x the length of its distractors; aim for about 1.0")
+    return errs
+
+def length_report(qs):
+    st = [s for s in (length_tells(q)[1] for q in qs) if s]; n = len(st)
+    if not n: return ""
+    return f"length check: right answer longest in {sum(1 for s in st if s[0])}/{n}, shortest in {sum(1 for s in st if s[1])}/{n}, mean length ratio {sum(s[2] for s in st) / n:.2f} (1.0 = no tell)"
+
 def validate(kind, body, t=None):
     errs = []
     if kind == "brief":
@@ -170,16 +197,12 @@ def validate(kind, body, t=None):
             if int(q.get("level", 0)) not in LEVELS: errs.append(f"{p}.level must be 1–5")
             if cats and q.get("cat") not in cats: errs.append(f"{p}.cat '{q.get('cat')}' is not a category id of this topic")
             if any(w in q["q"].lower() for w in ("all of the above", "none of the above")) or any("all of the above" in str(c).lower() for c in ch): errs.append(f"{p}: no all/none-of-the-above")
-            if len(ch) == 4 and isinstance(q.get("answer"), int) and 0 <= q["answer"] < 4:
-                L = [len(str(c)) for c in ch]; r = L[q["answer"]]; others = sorted(L[i] for i in range(4) if i != q["answer"])
-                if r > 40 and r > 1.35 * others[-1]: errs.append(f"{p}: the right answer is the longest by far ({r} chars vs {others[-1]}); write at least one distractor as long and as specific")
-                if r > 40 and others[-1] < 0.5 * r: errs.append(f"{p}: distractors are one-liners next to a detailed right answer; match length and specificity")
+            errs += [f"{p}: {e}" for e in length_tells(q)[0]]
         if len(qs) >= 6:
             from collections import Counter
             top = Counter(q.get("answer") for q in qs).most_common(1)[0]
             if top[1] > 0.5 * len(qs): errs.append(f"answer index {top[0]} is correct in {top[1]}/{len(qs)} questions; spread the right answer across slots (choices are shuffled on merge anyway, but write them balanced)")
-            longest = sum(1 for q in qs if len(q.get("choices", [])) == 4 and isinstance(q.get("answer"), int) and 0 <= q["answer"] < 4 and len(str(q["choices"][q["answer"]])) == max(len(str(c)) for c in q["choices"]))
-            if longest > 0.6 * len(qs): errs.append(f"the right answer is the longest option in {longest}/{len(qs)} questions; make distractors as long and detailed as the right one (or shorten the right one)")
+            errs += batch_length_tells(qs)
     elif kind == "diagnose":
         for k in ("diagnosis", "root_causes", "protocol"):
             if not body.get(k): errs.append(f"diagnose.{k} missing")
@@ -311,12 +334,14 @@ def read_body(src):
     return json.loads(raw)
 
 def cmd_fulfil(a):
-    n = fulfil(a.req_id, read_body(a.file)); print(f"ok {a.req_id} ({n} merged)")
+    body = read_body(a.file); n = fulfil(a.req_id, body); rep = length_report(body.get("questions") or [])
+    print(f"ok {a.req_id} ({n} merged)" + (" · " + rep if rep else ""))
 
 def cmd_validate(a):
     body = read_body(a.file); t = topic(a.topic) if a.topic else None
     errs = validate(a.type, body, t)
-    print("OK" if not errs else "\n".join(errs)); sys.exit(1 if errs else 0)
+    rep = length_report(body.get("questions") or []) if a.type == "questions" else ""
+    print(("OK" + (" · " + rep if rep else "")) if not errs else "\n".join(errs + ([rep] if rep else []))); sys.exit(1 if errs else 0)
 
 def cmd_due(a):
     t = topic(a.slug); q = {x["id"]: x for x in t["questions"]}

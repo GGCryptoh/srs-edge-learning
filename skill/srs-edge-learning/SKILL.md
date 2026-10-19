@@ -14,7 +14,7 @@ requires_secrets: []
 constraints:
   - "local only: the hub binds 127.0.0.1 and never uploads anything"
   - "the brief says what date its knowledge is from (as_of) and whether the web was checked"
-  - "questions are the agent's own writing, four distinct choices, one right, never all/none-of-the-above, distractors as long and specific as the right answer (the validator checks)"
+  - "questions are the agent's own writing, four distinct choices, one right, never all/none-of-the-above, all three distractors as long and specific as the right answer so neither the longest nor the shortest option is a tell (the validator checks per question and per batch)"
   - "never tell the learner the answer before they pick; the page reveals it"
 provenance: geoff
 license: MIT
@@ -73,7 +73,7 @@ Everything lives in `$LEARN_HOME` (default `~/.gh-learn/`): `index.json`, `topic
 ## Verification
 - `learn.py status <slug>` shows the brief present, ≥4 categories, a question bank with unanswered items at the learner's `next` level in every selected category, and no pending requests.
 - After a round, each answered category's `by_level` counts grew and `edge` is set once ≥3 questions at a level were answered.
-- `learn.py validate <file> --type questions --topic <slug>` prints `OK` for any batch before it is merged.
+- `learn.py validate <file> --type questions --topic <slug>` prints `OK` plus a length report for any batch before it is merged; the mean length ratio should sit near 1.0 and the right answer should be longest in roughly a quarter of questions.
 
 ## Smoke
 1. `/srs-edge-learning Kubernetes networking` → `add` ran, hub opened, the agent is in the `pending --wait` loop; after the user clicks Cliff notes, a `brief` request is fulfilled within one turn and the page shows it; no brief text in chat.

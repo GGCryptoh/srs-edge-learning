@@ -55,7 +55,7 @@ Cliff = 5–7 sections, ~900–1400 words total. Bullets = 4–6 sections, ~250�
    "tags":["nll","aliasing"]}
 ]}
 ```
-Rules the validator enforces: exactly 4 distinct choices, `answer` 0–3, `why` present, `level` 1–5, `cat` is a category id of this topic, no "all/none of the above". Duplicates of existing question text are dropped silently (the `fulfil` output says how many merged).
+Rules the validator enforces: exactly 4 distinct choices, `answer` 0–3, `why` present, `level` 1–5, `cat` is a category id of this topic, no "all/none of the above". Length tells (see `method.md` §Question craft): per question, the right answer may not be the longest or shortest by far (>30% and >12 chars beyond the nearest distractor), and when it is 30+ chars at least two distractors must be within 65% of its length; per batch of 6+, the right answer may be the strictly longest (or shortest) option in at most 45% of questions and must average 0.8–1.2× its distractors' length. `validate`/`fulfil` print the batch's length report. Duplicates of existing question text are dropped silently (the `fulfil` output says how many merged).
 
 ## `diagnose`
 ```json
