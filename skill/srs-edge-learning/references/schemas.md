@@ -11,7 +11,8 @@ The page writes a request; `learn.py pending` prints it with a `context` block; 
    "unanswered":{"borrowing":{"3":1}},
    "existing_questions":["…"],          // questions only (includes retired ones, so you do not rewrite them)
    "flagged":[{"q":"…","cat":"…","level":3,"answer":"…","reason":"The marked answer is wrong: …","ts":"…"}],   // questions only, when the learner retired some
-   "misses":[{"cat":"…","level":3,"q":"…","picked":"…","answer":"…","ts":"…"}]   // diagnose only
+   "misses":[{"cat":"…","level":3,"q":"…","picked":"…","answer":"…","ts":"…"}],   // diagnose only
+   "leeches":[{"q":"…","cat":"…","level":3,"answer":"…","wrong":3,"seen":5}]   // diagnose only: questions missed 2+ times, worst first
  }}
 ```
 

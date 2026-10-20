@@ -29,3 +29,7 @@ Expect: the rename shows on the page and in `learn.py topics` with the same slug
 ## 6. Backup, new machine, two agents
 Prompt: `back up my learning data` then, on another machine, `restore it`
 Expect: `learn.py backup` prints a zip path; `learn.py restore <zip>` on a fresh `LEARN_HOME` adds every topic and `topics` lists them; running it again skips them. With two agents in the `pending --wait` loop on one hub, each request is fulfilled exactly once (the second agent's `pending` does not print requests the first one claimed; `fulfil` on a live claim refuses without `--force`). If port 4848 is busy, `open` prints the port it took and the agent passes that URL on.
+
+## 7. Cross-topic review and hammer
+Prompt: (user clicks **Review all due** on the home page with two topics due; later **Hammer my weakest** on one topic)
+Expect: one session walks the due cards of both topics, each attempt lands in its own `topic.json` with `mode: "all"`, and the edge of neither topic changes. The hammer round names the weakest category, re-asks previously missed questions first, and `status` shows the edge unchanged while `due` moves.

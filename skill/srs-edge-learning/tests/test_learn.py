@@ -78,6 +78,19 @@ class TestLearningMaths(unittest.TestCase):
         self.assertEqual(len(self.L.due_cards(t)), 2)   # q0 retired, q3 never seen
 
 
+class TestStats(Base):
+    def test_qstats_leeches_and_due_all(self):
+        self.L.restore_from(SAMPLE_T); t = self.L.topic("rust-ownership"); st = self.L.qstats(t)
+        self.assertEqual(len(st), len(self.L.live(t))); seen = [v for v in st.values() if v["seen"]]; self.assertTrue(seen)
+        self.assertTrue(all(v["avg_ms"] is None or v["avg_ms"] > 0 for v in st.values()))
+        qid = next(k for k, v in st.items() if v["seen"])
+        for _ in range(3): self.L.add_attempt("rust-ownership", qid, (t["questions"][0]["answer"] + 1) % 4 if False else -1, 900, "train")   # three wrong answers (picked -1 never matches)
+        st = self.L.qstats(self.L.topic("rust-ownership")); self.assertTrue(st[qid]["leech"]); self.assertEqual(st[qid]["streak"], 3)
+        lz = self.L.leeches(self.L.topic("rust-ownership")); self.assertEqual(lz[0]["wrong"], st[qid]["wrong"])
+        self.assertGreaterEqual(self.L.summary(self.L.topic("rust-ownership"))["leeches"], 1)
+        d = self.L.due_all(); self.assertTrue(d and all(x["slug"] == "rust-ownership" and x["q"]["id"] for x in d)); self.assertEqual([x["due"] for x in d], sorted(x["due"] for x in d))
+        self.L.update_topic("rust-ownership", archived=True); self.assertEqual(self.L.due_all(), [])   # archived topics are not reviewed
+
 class TestTopicLifecycle(Base):
     def test_rename_archive_trash_undelete(self):
         slug = self.add()

@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 — 2026-10-19
+## 0.1.0 — unreleased (first build 2026-10-07, feature-complete 2026-10-20)
 - **Manage topics.** ⋯ menu on every topic (home card and topic header): rename / change goal and level (slug and URL stay), archive (home shows archived topics in a collapsed section), export the topic as JSON, delete with Undo (topics go to `$LEARN_HOME/trash/`). CLI: `rename`, `archive`, `unarchive`, `remove [--purge]`, `undelete`.
 - **Flag a bad question.** "⚑ flag this question" (or `f`) on the result card: pick a reason, optionally ask the agent for a replacement. A retired question leaves the bank, the edge maths and the SRS deck, is listed on Progress with a Restore button, and reaches the agent as `context.flagged`. CLI: `questions`, `retire [--restore]`.
 - **Backup and restore.** ⚙ → Download backup (zip of every topic + settings) and Restore from file (zip or a single topic JSON; tick to overwrite existing). CLI: `backup [--out]`, `restore <file> [--overwrite]`.
@@ -10,10 +10,14 @@
 - **UI.** Toasts, Esc / backdrop closes dialogs, cancel link on waiting cards, hover highlight on charts, favicon, archived and empty states, "claimed" shown on waiting cards.
 - Fixes: SRS intervals capped at 365 days (a card answered right ~60 times used to overflow the date); a day streak no longer breaks at midnight before you've played today; `examples/sample-topic.json` now exists (44 questions, three weeks of attempts) and is used by the tests.
 - Tests (`tests/test_learn.py`, stdlib unittest) and GitHub Actions: `ci.yml` runs them on Linux, macOS and Windows with Python 3.9 and 3.13 and smokes the CLI; `release.yml` builds and attaches `srs-edge-learning.zip` when a `v*` tag is pushed.
+- **Cross-topic review.** "Review all due" on the home page runs one session over every due card in every live topic. **Hammer my weakest** on Go deeper drills the weakest category, re-asking misses first; it updates cards but not the edge.
+- **Per-question stats.** Progress lists every question met with seen / wrong / average seconds / last seen, worst first, with leech (missed 3+) and "wrong last time" badges; tiles for average time to answer and leeches; a seconds-to-answer line. `learn.py stats <slug>`; `context.leeches` on diagnose requests.
+- **Mobile layout.** Two-column tiles, full-width cards, bottom-sheet dialogs, scrollable tables, a Show choices button in the read phase, larger touch targets.
+- **Welcome page and Help.** The home page before the first topic explains the loop and shows the agent prompt; the ? button opens how it works, modes, keys, levels and fixes.
 - Stronger length-tell guard on question batches. Per question the validator now rejects a right answer that is the longest **or shortest** by far (no 40-char floor any more), and a right answer flanked by two stub distractors (one matching distractor was enough before). Per batch it rejects the right answer being the strictly longest or shortest option in more than 45% of questions (was 60%, longest only) and a mean right/distractor length ratio outside 0.8–1.2. `validate` and `fulfil` print a length report. `examples/sample-questions.json` rewritten so its distractors match the right answer's length (it failed the old check).
 
-## 0.1.0 — 2026-10-07
-- First release. `learn.py` (stdlib): `setup`, `open` (detached hub on 127.0.0.1:4848), `serve`, `add`, `topics`, `status`, `pending --wait`, `fulfil`, `validate`, `misses`, `due`, `export`.
+### First build, 2026-10-07
+- First build. `learn.py` (stdlib): `setup`, `open` (detached hub on 127.0.0.1:4848), `serve`, `add`, `topics`, `status`, `pending --wait`, `fulfil`, `validate`, `misses`, `due`, `export`.
 - `assets/app.html`: topics home with new-topic wizard (goal, starting level, cliff / bullets / go deeper); per-topic tabs Brief · Go deeper (adaptive timed quiz: read phase, then four choices with countdown, instant result + why, keyboard 1–4/space) · Train (SRS, SM-2 lite) · Progress (edge per category, level bars, activity, diagnose button) · Protocol (diagnosis, root causes, checklist).
 - Agent-as-backend protocol: requests `brief`, `categories`, `questions`, `diagnose` with validated schemas (`references/schemas.md`); the page auto-requests more questions when a category's bank runs low at the target level.
 - Agent presence: the listener loop writes a heartbeat; the page shows **agent listening / offline** and only shows the paste-this-prompt card when nobody is listening. Settings switch for automatic question requests. Validator rejects length and slot tells in question batches; choices shuffled on merge.

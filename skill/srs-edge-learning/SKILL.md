@@ -1,6 +1,6 @@
 ---
 name: srs-edge-learning
-version: 0.2.0
+version: 0.1.0
 description: SRS Edge Learning — get smart at any topic by finding the edge of what you know and pushing it outward. Spins up a local hub (127.0.0.1:4848) that remembers every topic; for a new topic it writes a curated brief (cliff notes or short bullets — what it is, how it applies in business and life, the movers, recent news), then maps the topic into categories, drills you with timed multiple-choice questions that get harder until it finds your edge, diagnoses your misses into a training protocol, and schedules spaced-repetition reviews so you get smarter over time. The agent is the backend (no API key), so it runs in Claude Code, Codex and Copilot CLI alike. Use when the user says "/srs-edge-learning", "learn something", "get smart at X", "teach me X", "quiz me on X", "find my edge", "what's due for review", "SRS", "spaced repetition", "serve my pending requests", or asks to continue a topic they started earlier.
 owner: geoff
 audience: [geoff, business, family]
@@ -93,6 +93,8 @@ Everything lives in `$LEARN_HOME` (default `~/.gh-learn/`): `index.json`, `topic
 - Every write (`fulfil`, attempts from the page, rename, retire, restore) takes a cross-process lock on `$LEARN_HOME/.lock`, so two agents or several pages cannot corrupt a topic file. Writes are atomic (temp file + rename).
 - A retired question stays in `topic.json` with `retired: {ts, reason}` but leaves the bank, the edge maths and the SRS deck; `context.flagged` carries the last ten to the agent.
 - SRS intervals are capped at 365 days.
+- Quiz modes and the edge: only `quiz` attempts (first attempt per question) move the edge. `hammer` (weakest category, re-asks misses), `train` (per-topic reviews) and `all` (reviews across every topic from the home page) update the SRS cards only.
+- `learn.py stats <slug>` lists leeches (missed 3+ times), "wrong last time" and the slowest questions; a `diagnose` request carries `context.leeches` too, so name them in the diagnosis.
 - Edge rule: a level counts as held when ≥3 first-attempt quiz answers at that level are ≥60% right; `next` moves up after ≥80% at the current top level and down after ≤40%.
 - SRS is SM-2 lite (intervals 1, 3, then ×ease; ease 1.3–3.0). `train` mode attempts never change the edge.
 - Set `LEARN_HOME` to keep a topic's data inside a project folder.

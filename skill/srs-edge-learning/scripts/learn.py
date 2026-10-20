@@ -22,6 +22,7 @@ the page files requests (brief / categories / questions / diagnose); the agent a
   learn.py retire <slug> <qid> [--reason …]   retire a bad question: out of the bank, the edge maths and the SRS deck
   learn.py backup [--out file.zip]            zip the whole hub (every topic + settings)
   learn.py restore <file.zip|topic.json> [--overwrite]   import topics from a backup or a single topic file
+  learn.py stats <slug>                       per-question stats: leeches (missed 3+ times), slowest, never-right
 
 Home: $LEARN_HOME or ~/.gh-learn. Binds 127.0.0.1 only (falls back to the next free port if 4848 is taken). No network calls, no keys.
 Several agents may serve one hub: `pending` claims what it prints, claims expire when the agent goes quiet, and every write takes a cross-process lock.
@@ -32,7 +33,7 @@ HOME = os.path.expanduser(os.environ.get("LEARN_HOME", "~/.gh-learn"))
 HERE = os.path.dirname(os.path.abspath(__file__))
 APP = os.path.join(os.path.dirname(HERE), "assets", "app.html")
 PORT = 4848
-VERSION = "0.2.0"
+VERSION = "0.1.0"
 TYPES = ("brief", "categories", "questions", "diagnose")
 OPEN = ("pending", "claimed")   # request statuses the page shows as "in progress"
 CLAIM_TTL = 900                  # seconds before a claimed request falls back to pending even if the agent still beats
@@ -170,6 +171,34 @@ def due_cards(t):
         if not c or c["due"] <= today(): d.append(q["id"])
     return d
 
+def qstats(t):
+    """Per live question: times seen, times wrong, mean ms, last seen, wrong streak; `leech` once wrong 3+ times."""
+    out = {q["id"]: {"seen": 0, "wrong": 0, "ms": 0, "last": "", "streak": 0} for q in live(t)}
+    for a in t["attempts"]:
+        x = out.get(a["qid"])
+        if not x: continue
+        x["seen"] += 1; x["ms"] += int(a.get("ms") or 0); x["last"] = a["ts"]
+        if a["correct"]: x["streak"] = 0
+        else: x["wrong"] += 1; x["streak"] += 1
+    for x in out.values(): x["avg_ms"] = round(x["ms"] / x["seen"]) if x["seen"] else None; x["leech"] = x["wrong"] >= 3; x.pop("ms")
+    return out
+
+def leeches(t, limit=10):
+    q = {x["id"]: x for x in live(t)}; st = qstats(t)
+    rows = sorted(((k, v) for k, v in st.items() if v["wrong"] >= 2), key=lambda kv: (-kv[1]["wrong"], -kv[1]["streak"]))[:limit]
+    return [{"q": q[k]["q"], "cat": q[k]["cat"], "level": q[k].get("level"), "answer": q[k]["choices"][q[k]["answer"]], "wrong": v["wrong"], "seen": v["seen"]} for k, v in rows]
+
+def due_all():
+    """Every due card across the hub's live topics, oldest-due first: the cross-topic review."""
+    out = []
+    for e in index()["topics"]:
+        t = topic(e["slug"])
+        if t.get("archived"): continue
+        cats = {c["id"]: c["name"] for c in t["categories"]}; q = {x["id"]: x for x in live(t)}
+        for qid in due_cards(t):
+            out.append({"slug": t["slug"], "name": t["name"], "cat_name": cats.get(q[qid]["cat"], q[qid]["cat"]), "due": t["srs"].get(qid, {}).get("due", ""), "q": q[qid]})
+    return sorted(out, key=lambda x: x["due"])
+
 def summary(t):
     e = edge(t); att = t["attempts"]
     unanswered = {}
@@ -184,7 +213,9 @@ def summary(t):
     d = dt.date.today()
     if days and days[-1] == (d - dt.timedelta(days=1)).isoformat(): d -= dt.timedelta(days=1)   # a streak survives until the end of today
     while d.isoformat() in activity: streak += 1; d -= dt.timedelta(days=1)
+    timed = [a["ms"] for a in att if a.get("ms")]; st = qstats(t)
     return {"slug": t["slug"], "name": t["name"], "goal": t.get("goal", ""), "archived": bool(t.get("archived")), "has_brief": bool(t["brief"]), "categories": len(t["categories"]),
+            "avg_ms": round(sum(timed) / len(timed)) if timed else None, "leeches": sum(1 for x in st.values() if x["leech"]),
             "questions": len(lv), "retired": len(t["questions"]) - len(lv), "answered": len(seen & lid), "attempts": len(att), "accuracy": round(sum(a["correct"] for a in att) / len(att), 2) if att else None,
             "due": len(due_cards(t)), "edge": e, "unanswered": {k: {str(l): n for l, n in v.items()} for k, v in unanswered.items()},
             "streak_days": streak, "last_active": att[-1]["ts"] if att else t.get("created"), "plan": bool(t.get("plan")), "activity": activity,
@@ -497,7 +528,7 @@ def cmd_pending(a):
                     fl = flagged(t)
                     if fl: ctx["flagged"] = fl
                 if r["type"] == "diagnose":
-                    ctx["misses"] = misses(t, 30)
+                    ctx["misses"] = misses(t, 30); ctx["leeches"] = leeches(t)
                 out.append({**r, "context": ctx})
             print(json.dumps(out, indent=1, ensure_ascii=False)); return
         time.sleep(2)
@@ -556,6 +587,13 @@ def cmd_questions(a):
         print(f"{q['id']}  [{q['cat']} L{q.get('level')}] {q['q'][:90]}" + (f"   retired: {r.get('reason')}" if r else ""))
 def cmd_retire(a):
     q = retire_question(a.slug, a.qid, a.reason, restore=a.restore); print(f"{'restored' if a.restore else 'retired'} {q['id']}: {q['q'][:80]}")
+def cmd_stats(a):
+    t = topic(a.slug); q = {x["id"]: x for x in live(t)}; st = qstats(t); seen = [(k, v) for k, v in st.items() if v["seen"]]
+    s = summary(t); print(f"# {t['name']}: {len(seen)} questions met, avg {round((s['avg_ms'] or 0) / 1000, 1)}s to answer, {s['leeches']} leeches")
+    for title, rows in (("leeches (wrong 3+ times)", [x for x in seen if x[1]["leech"]]), ("wrong on last try", [x for x in seen if x[1]["streak"] and not x[1]["leech"]]), ("slowest", sorted((x for x in seen if x[1]["avg_ms"]), key=lambda x: -x[1]["avg_ms"])[:5])):
+        if not rows: continue
+        print(f"\n## {title}")
+        for k, v in rows: print(f"  {k}  [{q[k]['cat']} L{q[k].get('level')}] wrong {v['wrong']}/{v['seen']}  {round((v['avg_ms'] or 0) / 1000, 1)}s  {q[k]['q'][:80]}")
 def cmd_backup(a): print(backup_zip(a.out))
 def cmd_restore(a):
     added, replaced, skipped = restore_from(a.file, overwrite=a.overwrite)
@@ -596,6 +634,7 @@ def make_handler():
                 elif p == "/api/index":
                     i = index(); self._json(200, {"settings": i["settings"], "home": HOME, "port": self.server.server_address[1], "version": VERSION, "levels": LEVELS, "agent": agent_status(), "topics": [summary(topic(e["slug"])) for e in i["topics"]],
                                                  "pending": [{"id": r["id"], "topic": r["topic"], "type": r["type"], "ts": r["ts"], "status": r["status"]} for r in open_requests()]})
+                elif p == "/api/due": self._json(200, {"due": due_all()})
                 elif p == "/api/ping": self._json(200, {"app": "srs-edge-learning", "version": VERSION, "home": HOME, "port": self.server.server_address[1]})
                 elif p == "/api/backup":
                     tmp = os.path.join(HOME, "backups", "_download.zip"); backup_zip(tmp); b = open(tmp, "rb").read(); os.remove(tmp)
@@ -604,7 +643,7 @@ def make_handler():
                     t = topic(p.split("/")[3]); b = json.dumps(t, indent=1, ensure_ascii=False).encode()
                     self.send_response(200); self.send_header("Content-Type", "application/json; charset=utf-8"); self.send_header("Content-Disposition", f'attachment; filename="{t["slug"]}.json"'); self.send_header("Content-Length", str(len(b))); self.end_headers(); self.wfile.write(b)
                 elif p.startswith("/api/topic/"):
-                    t = topic(p.split("/")[3]); open_requests(); self._json(200, {**t, "summary": summary(t), "due": due_cards(t), "agent": agent_status(),
+                    t = topic(p.split("/")[3]); open_requests(); self._json(200, {**t, "summary": summary(t), "due": due_cards(t), "qstats": qstats(t), "agent": agent_status(),
                                                                "requests": [r for r in requests_all() if r["topic"] == t["slug"]][-20:]})
                 else: self._json(404, {"error": "not found"})
             except SystemExit as e: self._json(404, {"error": str(e)})
@@ -707,6 +746,7 @@ def main():
     p = sp.add_parser("undelete"); p.add_argument("slug"); p.set_defaults(fn=cmd_undelete)
     p = sp.add_parser("questions"); p.add_argument("slug"); p.add_argument("--retired", action="store_true"); p.set_defaults(fn=cmd_questions)
     p = sp.add_parser("retire"); p.add_argument("slug"); p.add_argument("qid"); p.add_argument("--reason", default=""); p.add_argument("--restore", action="store_true"); p.set_defaults(fn=cmd_retire)
+    p = sp.add_parser("stats"); p.add_argument("slug"); p.set_defaults(fn=cmd_stats)
     p = sp.add_parser("backup"); p.add_argument("--out"); p.set_defaults(fn=cmd_backup)
     p = sp.add_parser("restore"); p.add_argument("file"); p.add_argument("--overwrite", action="store_true"); p.set_defaults(fn=cmd_restore)
     a = ap.parse_args()
